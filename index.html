@@ -2,413 +2,378 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#17111d">
 <title>Dig Quest — A Field Journal Adventure</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --night:#221812;
-    --night-2:#2e2118;
-    --lantern:#e8a33d;
-    --lantern-soft:#f2c069;
-    --sand:#d9c7a7;
-    --sand-dim:#a8987c;
-    --paper:#efe3c8;
-    --paper-edge:#d8c69f;
-    --ink:#2a2118;
-    --ink-soft:#5a4b38;
-    --clay:#b4552d;
-    --moss:#6d7048;
-    --dirt-1:#4a3423;
-    --dirt-2:#6b4c30;
-    --dirt-3:#8a6a44;
-    --stamp:#8c2f1b;
-    --font-display:'Fraunces', Georgia, serif;
-    --font-body:'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
-    --font-mono:'IBM Plex Mono', 'Courier New', monospace;
+    /* dusk excavation palette */
+    --void:#17111d;
+    --void-2:#221a2a;
+    --surface:#2b2032;
+    --surface-2:#352741;
+    --line:#4a3654;
+
+    --soil-deep:#4a2c1a;
+    --soil:#7a4b28;
+    --soil-top:#a86c3c;
+
+    --amber:#ffb02e;
+    --amber-hot:#ffd166;
+    --cream:#f8eeda;
+    --sand:#d6c4ad;
+    --sand-dim:#9a8a7c;
+    --ink:#241a12;
+    --ink-soft:#5f4c3a;
+
+    /* artifact identity colors — each buried find gets its own */
+    --f1:#ffc233;
+    --f2:#3ddad7;
+    --f3:#ff6ba8;
+
+    --rust:#e0533a;
+    --stamp:#c23a22;
+
+    --display:'Fraunces', Georgia, serif;
+    --body:'Atkinson Hyperlegible', system-ui, sans-serif;
+    --mono:'IBM Plex Mono', monospace;
+
+    --spring:cubic-bezier(.2,1.3,.4,1);
   }
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
   body{
     background:
-      radial-gradient(1100px 600px at 50% -10%, rgba(232,163,61,0.14), transparent 60%),
-      var(--night);
+      radial-gradient(900px 520px at 50% -8%, rgba(255,176,46,0.20), transparent 62%),
+      radial-gradient(700px 500px at 88% 12%, rgba(61,218,215,0.09), transparent 60%),
+      var(--void);
+    background-attachment:fixed;
     color:var(--sand);
-    font-family:var(--font-body);
+    font-family:var(--body);
     line-height:1.5;
     min-height:100dvh;
+    overflow-x:hidden;
   }
   #app{
-    max-width:560px;
+    max-width:540px;
     margin:0 auto;
-    padding:16px 16px 48px;
+    padding:14px 14px calc(40px + env(safe-area-inset-bottom));
     min-height:100dvh;
     display:flex;
     flex-direction:column;
   }
+  #fx{position:fixed; inset:0; pointer-events:none; z-index:99; overflow:hidden;}
+  .particle{position:fixed; border-radius:50%; pointer-events:none; will-change:transform,opacity;
+    animation:fly .7s cubic-bezier(.2,.7,.3,1) forwards;}
+  @keyframes fly{ to{ transform:translate(var(--dx), var(--dy)) scale(0.2); opacity:0; } }
+  .shakescreen{animation:screenshake .38s ease;}
+  @keyframes screenshake{
+    10%{transform:translate(-4px,2px) rotate(-.3deg);}
+    30%{transform:translate(5px,-3px) rotate(.4deg);}
+    50%{transform:translate(-4px,1px);}
+    70%{transform:translate(3px,2px);}
+    100%{transform:none;}
+  }
 
-  /* ---------- shared bits ---------- */
   .eyebrow{
-    font-family:var(--font-mono);
-    font-size:11px;
-    letter-spacing:0.18em;
-    text-transform:uppercase;
-    color:var(--lantern);
+    font-family:var(--mono); font-size:11px; font-weight:600;
+    letter-spacing:.16em; text-transform:uppercase; color:var(--amber);
   }
-  h1,h2,h3{font-family:var(--font-display); line-height:1.12;}
-  button{
-    font-family:var(--font-body);
-    cursor:pointer;
-    border:none;
-    border-radius:10px;
-  }
-  button:focus-visible, .tile:focus-visible{
-    outline:3px solid var(--lantern);
-    outline-offset:2px;
-  }
+  h1,h2,h3{font-family:var(--display); line-height:1.1;}
+  button{font-family:var(--body); cursor:pointer; border:none; border-radius:12px;}
+  button:focus-visible, .tile:focus-visible{outline:3px solid var(--amber); outline-offset:3px;}
+
   .btn-main{
-    background:var(--lantern);
-    color:var(--ink);
-    font-weight:700;
-    font-size:17px;
-    padding:14px 26px;
-    border-radius:12px;
-    box-shadow:0 4px 0 rgba(0,0,0,0.35);
-    transition:transform .08s ease;
+    background:linear-gradient(180deg, var(--amber-hot), var(--amber));
+    color:var(--ink); font-weight:700; font-size:17px;
+    padding:15px 26px; border-radius:14px;
+    box-shadow:0 5px 0 #b9741a, 0 10px 24px rgba(255,176,46,.28);
+    transition:transform .1s var(--spring), box-shadow .1s ease;
   }
-  .btn-main:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.35);}
+  .btn-main:active{transform:translateY(4px); box-shadow:0 1px 0 #b9741a;}
   .btn-ghost{
-    background:transparent;
-    color:var(--sand);
-    border:1.5px solid var(--sand-dim);
-    padding:10px 18px;
-    font-size:15px;
-    font-weight:700;
+    background:rgba(255,255,255,.04); color:var(--sand);
+    border:1.5px solid var(--line); padding:11px 16px;
+    font-size:14.5px; font-weight:700; border-radius:12px;
+    transition:border-color .15s ease, background .15s ease;
   }
-  .btn-ghost:active{background:rgba(217,199,167,0.12);}
-  .topbar{
-    display:flex; align-items:center; justify-content:space-between;
-    gap:8px; margin-bottom:18px;
-  }
-  .topbar .title{font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--sand);}
+  .btn-ghost:hover{border-color:var(--amber); color:var(--amber-hot);}
+  .btn-ghost:active{transform:scale(.97);}
+  .topbar{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:16px;}
+  .topbar .title{font-family:var(--display); font-weight:900; font-size:19px; color:var(--cream);}
+  .mute{background:none; border:none; font-size:18px; padding:6px; opacity:.75;}
 
-  /* ---------- title screen ---------- */
-  .screen-title{
-    flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center; gap:22px;
-    animation:fadeUp .5s ease both;
-  }
-  .title-emblem{
-    font-size:64px; line-height:1;
-    filter:drop-shadow(0 6px 12px rgba(0,0,0,0.5));
-  }
+  /* ---------- title ---------- */
+  .screen-title{flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center; gap:20px;}
+  .title-emblem{font-size:70px; line-height:1; animation:bob 3.2s ease-in-out infinite;
+    filter:drop-shadow(0 10px 22px rgba(255,176,46,.4));}
+  @keyframes bob{50%{transform:translateY(-10px) rotate(-6deg);}}
   .screen-title h1{
-    font-size:clamp(42px, 11vw, 58px);
-    font-weight:900;
-    color:var(--paper);
-    letter-spacing:-0.01em;
+    font-size:clamp(46px, 13vw, 66px); font-weight:900; color:var(--cream);
+    letter-spacing:-.02em;
+    text-shadow:0 0 40px rgba(255,176,46,.35);
+    animation:fadeUp .6s var(--spring) both;
   }
-  .screen-title h1 .accent{color:var(--lantern);}
-  .tagline{color:var(--sand); font-size:17px; max-width:38ch; margin:0 auto;}
+  .screen-title h1 .accent{
+    background:linear-gradient(90deg, var(--f1), var(--f3));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .tagline{color:var(--sand); font-size:16.5px; max-width:36ch; margin:0 auto;}
   .promise{
-    font-family:var(--font-mono);
-    font-size:12px;
-    color:var(--sand-dim);
-    letter-spacing:0.06em;
-    border-top:1px dashed var(--sand-dim);
-    border-bottom:1px dashed var(--sand-dim);
-    padding:10px 0;
-    max-width:40ch;
-    margin:0 auto;
+    font-family:var(--mono); font-size:11.5px; color:var(--sand-dim);
+    border:1px dashed var(--line); border-radius:12px;
+    padding:11px 12px; max-width:38ch; margin:0 auto;
+    background:rgba(255,255,255,.02);
   }
-  .promise b{color:var(--lantern-soft); font-weight:500;}
+  .promise b{color:var(--amber-hot); font-weight:600;}
 
-  /* ---------- map screen ---------- */
-  .map-head{margin-bottom:16px;}
-  .map-head h2{font-size:30px; color:var(--paper); font-weight:700;}
-  .map-head p{color:var(--sand-dim); font-size:15px;}
-  .sites{display:flex; flex-direction:column; gap:12px;}
+  /* ---------- map ---------- */
+  .map-head{margin-bottom:14px;}
+  .map-head h2{font-size:29px; color:var(--cream); font-weight:900;}
+  .map-head p{color:var(--sand-dim); font-size:14.5px;}
+  .sites{display:flex; flex-direction:column; gap:11px;}
   .site-card{
-    display:flex; align-items:center; gap:14px;
-    width:100%; text-align:left;
-    background:var(--night-2);
-    border:1.5px solid #4a382a;
-    border-radius:14px;
-    padding:14px;
-    color:var(--sand);
-    transition:transform .08s ease, border-color .15s ease;
+    display:flex; align-items:center; gap:13px; width:100%; text-align:left;
+    background:linear-gradient(150deg, var(--surface), var(--void-2));
+    border:1.5px solid var(--line); border-radius:16px; padding:13px;
+    color:var(--sand); position:relative; overflow:hidden;
+    transition:transform .12s var(--spring), border-color .15s ease;
+    animation:fadeUp .4s var(--spring) both;
   }
-  .site-card:active{transform:scale(0.985);}
-  .site-card:hover{border-color:var(--lantern);}
+  .site-card:hover{border-color:var(--amber); transform:translateY(-2px);}
+  .site-card:active{transform:scale(.985);}
   .site-emoji{
-    font-size:34px; width:56px; height:56px;
-    display:grid; place-items:center;
-    background:rgba(232,163,61,0.1);
-    border-radius:12px;
-    flex-shrink:0;
+    font-size:32px; width:56px; height:56px; display:grid; place-items:center;
+    background:radial-gradient(circle at 40% 35%, rgba(255,176,46,.28), rgba(255,176,46,.06));
+    border-radius:14px; flex-shrink:0;
   }
   .site-info{flex:1; min-width:0;}
-  .site-info h3{font-size:19px; color:var(--paper);}
-  .site-info .where{font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--lantern); margin-bottom:2px;}
-  .site-info .prog{font-size:13px; color:var(--sand-dim); margin-top:3px;}
-  .site-done{color:var(--lantern-soft); font-size:22px;}
-  .journal-link{margin-top:18px; width:100%;}
-  .nav-row{display:flex; gap:10px; margin-top:18px;}
+  .site-info h3{font-size:18.5px; color:var(--cream); font-weight:900;}
+  .site-info .where{font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.12em;
+    text-transform:uppercase; color:var(--amber); margin-bottom:1px; display:block;}
+  .site-info .prog{font-size:13px; color:var(--sand-dim); margin-top:3px; display:block;}
+  .site-done{color:var(--amber-hot); font-size:22px;}
+  .site-bar{height:5px; border-radius:99px; background:rgba(255,255,255,.08); margin-top:7px; overflow:hidden;}
+  .site-bar i{display:block; height:100%; border-radius:99px;
+    background:linear-gradient(90deg, var(--f1), var(--amber)); transition:width .5s var(--spring);}
+  .nav-row{display:flex; gap:9px; margin-top:16px;}
   .nav-row .btn-ghost{flex:1;}
-  .quest-card{cursor:default;}
-  .quest-card:hover{border-color:#4a382a;}
-  .quest-card:active{transform:none;}
-  .quest-done{border-color:var(--lantern);}
-  .quest-done .site-emoji{background:rgba(232,163,61,0.22);}
-  .prog-done{color:var(--lantern-soft) !important; font-weight:700;}
   .master-banner{
-    margin-top:16px;
-    background:linear-gradient(135deg, rgba(232,163,61,0.2), rgba(180,85,45,0.2));
-    border:1.5px solid var(--lantern);
-    border-radius:14px;
-    padding:16px;
-    text-align:center;
-    animation:fadeUp .5s ease both;
+    margin-top:14px; text-align:center; border-radius:16px; padding:18px;
+    background:linear-gradient(135deg, rgba(255,194,51,.22), rgba(255,107,168,.18));
+    border:1.5px solid var(--amber);
+    animation:fadeUp .5s var(--spring) both;
   }
-  .master-banner .big{font-size:34px;}
-  .master-banner h3{color:var(--lantern-soft); font-size:20px; margin:4px 0 2px;}
+  .master-banner .big{font-size:38px;}
+  .master-banner h3{color:var(--amber-hot); font-size:21px; margin:4px 0 2px; font-weight:900;}
   .master-banner p{font-size:14px; color:var(--sand);}
 
-  /* ---------- dig screen ---------- */
-  .dig-head{margin-bottom:10px;}
-  .dig-head h2{font-size:26px; color:var(--paper);}
-  .dig-head p{font-size:14px; color:var(--sand-dim);}
-  .frag-tracker{
-    display:flex; gap:10px; flex-wrap:wrap;
-    margin:12px 0;
-  }
+  /* ---------- quests ---------- */
+  .quest-card{cursor:default;}
+  .quest-card:hover{border-color:var(--line); transform:none;}
+  .quest-card:active{transform:none;}
+  .quest-done{border-color:var(--amber); background:linear-gradient(150deg, rgba(255,176,46,.16), var(--void-2));}
+  .quest-done .site-emoji{background:radial-gradient(circle at 40% 35%, rgba(255,176,46,.5), rgba(255,176,46,.12));}
+  .prog-done{color:var(--amber-hot) !important; font-weight:700;}
+
+  /* ---------- dig ---------- */
+  .dig-head h2{font-size:24px; color:var(--cream); font-weight:900;}
+  .dig-head p{font-size:13px; color:var(--sand-dim);}
+  .frag-tracker{display:flex; gap:8px; flex-wrap:wrap; margin:12px 0 10px;}
   .frag-pill{
-    font-family:var(--font-mono);
-    font-size:12px;
-    background:var(--night-2);
-    border:1px solid #4a382a;
-    border-radius:999px;
-    padding:6px 12px;
-    color:var(--sand-dim);
+    font-family:var(--mono); font-size:11.5px; font-weight:600;
+    border-radius:99px; padding:6px 11px;
+    background:rgba(255,255,255,.04);
+    border:1.5px solid var(--line); color:var(--sand-dim);
+    display:flex; align-items:center; gap:6px;
+    transition:all .3s var(--spring);
   }
-  .frag-pill.found-all{border-color:var(--lantern); color:var(--lantern-soft);}
-  .grid{
-    display:grid;
-    grid-template-columns:repeat(5, 1fr);
-    gap:7px;
-    margin:8px 0 14px;
-  }
+  .frag-pill .dot{width:9px; height:9px; border-radius:50%; box-shadow:0 0 8px currentColor;}
+  .frag-pill.live{color:var(--cream);}
+  .frag-pill.full{background:rgba(255,255,255,.09);}
+  .grid{display:grid; grid-template-columns:repeat(5,1fr); gap:7px; margin:6px 0 13px;}
   .tile{
-    aspect-ratio:1;
-    border-radius:9px;
-    border:none;
-    font-size:22px;
-    display:grid; place-items:center;
-    background:linear-gradient(160deg, var(--dirt-2), var(--dirt-1));
-    box-shadow:inset 0 -3px 0 rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.06);
-    transition:transform .08s ease, background .15s ease;
+    aspect-ratio:1; border-radius:11px; border:none; position:relative;
+    display:grid; place-items:center; font-size:20px;
+    background:
+      radial-gradient(circle at 22% 28%, rgba(255,255,255,.10) 1px, transparent 2px),
+      radial-gradient(circle at 68% 62%, rgba(0,0,0,.22) 1.5px, transparent 3px),
+      radial-gradient(circle at 45% 80%, rgba(255,255,255,.06) 1px, transparent 2px),
+      linear-gradient(160deg, var(--soil), var(--soil-deep));
+    box-shadow:inset 0 -4px 0 rgba(0,0,0,.32), inset 0 2px 0 rgba(255,255,255,.09), 0 2px 6px rgba(0,0,0,.3);
+    transition:transform .1s var(--spring), background .2s ease, box-shadow .2s ease;
     cursor:pointer;
-    position:relative;
   }
-  .tile:active{transform:scale(0.93);}
-  .tile.depth1{background:linear-gradient(160deg, var(--dirt-3), var(--dirt-2));}
+  .tile:active{transform:scale(.9);}
+  .tile.depth1{
+    background:
+      radial-gradient(circle at 30% 30%, rgba(255,255,255,.12) 1.5px, transparent 3px),
+      radial-gradient(circle at 70% 65%, rgba(0,0,0,.18) 2px, transparent 4px),
+      linear-gradient(160deg, var(--soil-top), var(--soil));
+  }
   .tile.cleared{
-    background:linear-gradient(160deg, #3a2c1e, #2c2015);
-    box-shadow:inset 0 3px 6px rgba(0,0,0,0.5);
+    background:linear-gradient(160deg, #241a14, #191009);
+    box-shadow:inset 0 4px 10px rgba(0,0,0,.65);
     cursor:default;
   }
+  .tile.cleared:active{transform:none;}
   .tile.fragment{
-    background:linear-gradient(160deg, var(--paper), var(--paper-edge));
-    box-shadow:inset 0 -3px 0 rgba(0,0,0,0.15);
-    cursor:default;
-    animation:pop .3s ease both;
+    background:linear-gradient(160deg, var(--fc), color-mix(in srgb, var(--fc) 62%, #000));
+    box-shadow:0 0 0 2px rgba(255,255,255,.28) inset, 0 0 18px var(--fc), 0 3px 8px rgba(0,0,0,.4);
+    cursor:pointer;
+    animation:popIn .45s var(--spring) both;
   }
-  .tile.shake{animation:shake .35s ease;}
-  @keyframes shake{
-    0%,100%{transform:translateX(0);}
-    25%{transform:translateX(-5px);}
-    50%{transform:translateX(5px);}
-    75%{transform:translateX(-3px);}
+  .tile.fragment::after{
+    content:attr(data-n);
+    position:absolute; top:3px; right:5px;
+    font-family:var(--mono); font-size:10px; font-weight:600;
+    color:rgba(0,0,0,.62);
   }
-  @keyframes pop{
-    0%{transform:scale(0.6);}
-    70%{transform:scale(1.1);}
-    100%{transform:scale(1);}
+  .tile.fragment .fi{filter:drop-shadow(0 1px 2px rgba(0,0,0,.4));}
+  .tile.pulse{animation:pulse .5s ease;}
+  @keyframes pulse{50%{transform:scale(1.14); box-shadow:0 0 26px var(--fc);}}
+  .tile.shake{animation:tshake .4s ease;}
+  @keyframes tshake{
+    20%{transform:translateX(-6px) rotate(-3deg);}
+    40%{transform:translateX(6px) rotate(3deg);}
+    60%{transform:translateX(-4px) rotate(-2deg);}
+    80%{transform:translateX(4px);}
   }
-  .tools{
-    display:flex; gap:10px;
-  }
+  @keyframes popIn{0%{transform:scale(.4) rotate(-18deg); opacity:0;} 100%{transform:none; opacity:1;}}
+
+  .tools{display:flex; gap:9px;}
   .tool{
-    flex:1;
-    display:flex; align-items:center; justify-content:center; gap:8px;
-    padding:13px;
-    font-size:16px; font-weight:700;
-    background:var(--night-2);
-    color:var(--sand);
-    border:2px solid #4a382a;
-    border-radius:12px;
+    flex:1; display:flex; align-items:center; justify-content:center; gap:7px;
+    padding:14px; font-size:15.5px; font-weight:700;
+    background:rgba(255,255,255,.04); color:var(--sand);
+    border:2px solid var(--line); border-radius:14px;
+    transition:all .15s var(--spring);
   }
+  .tool:active{transform:scale(.96);}
   .tool.active{
-    border-color:var(--lantern);
-    background:rgba(232,163,61,0.14);
-    color:var(--lantern-soft);
+    border-color:var(--amber); color:var(--ink);
+    background:linear-gradient(180deg, var(--amber-hot), var(--amber));
+    box-shadow:0 0 20px rgba(255,176,46,.35);
   }
   .dig-tip{
-    margin-top:12px;
-    font-size:14.5px;
-    color:var(--sand);
-    background:var(--night-2);
-    border-left:3px solid var(--lantern);
-    border-radius:0 10px 10px 0;
-    padding:11px 13px;
-    min-height:44px;
+    margin-top:12px; font-size:14.5px; color:var(--sand);
+    background:var(--surface); border-left:3px solid var(--amber);
+    border-radius:0 12px 12px 0; padding:11px 13px; min-height:46px;
   }
-  .dig-tip b{color:var(--lantern-soft);}
-  .dig-tip.flash{animation:tipflash .7s ease;}
+  .dig-tip b{color:var(--amber-hot);}
+  .dig-tip.flash{animation:tipflash .75s ease;}
   @keyframes tipflash{
-    0%{background:rgba(232,163,61,0.32); transform:translateX(3px);}
-    100%{background:var(--night-2); transform:none;}
+    0%{background:rgba(255,176,46,.3); transform:translateX(4px);}
+    100%{background:var(--surface); transform:none;}
   }
 
-  /* ---------- modal (discovery / fact / quiz) ---------- */
+  /* ---------- modal ---------- */
   .overlay{
-    position:fixed; inset:0;
-    background:rgba(15,10,6,0.78);
-    display:grid; place-items:center;
-    padding:16px;
-    z-index:50;
+    position:fixed; inset:0; background:rgba(10,6,14,.82);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    display:grid; place-items:center; padding:14px; z-index:50;
     animation:fadeIn .25s ease both;
   }
   .card{
-    background:var(--paper);
-    color:var(--ink);
-    border-radius:16px;
-    padding:24px 20px;
-    width:100%;
-    max-width:440px;
-    max-height:88dvh;
-    overflow-y:auto;
-    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+    background:linear-gradient(165deg, var(--cream), #e6d8ba);
+    color:var(--ink); border-radius:20px; padding:24px 20px;
+    width:100%; max-width:430px; max-height:88dvh; overflow-y:auto;
+    box-shadow:0 26px 70px rgba(0,0,0,.65), 0 0 0 1px rgba(255,255,255,.2) inset;
     position:relative;
-    animation:cardIn .35s cubic-bezier(.2,.9,.3,1.2) both;
+    animation:cardIn .45s var(--spring) both;
   }
-  .card .eyebrow{color:var(--clay);}
-  .card h3{font-size:26px; margin:4px 0 2px; color:var(--ink); font-weight:900;}
-  .card .catalog{font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; color:var(--ink-soft); text-transform:uppercase;}
-  .card .art{
-    font-size:64px; text-align:center; margin:14px 0;
-    filter:drop-shadow(0 4px 8px rgba(0,0,0,0.2));
-    animation:pop .45s ease both;
+  .card::before{
+    content:""; position:absolute; inset:0; border-radius:20px; pointer-events:none;
+    background:linear-gradient(105deg, transparent 30%, rgba(255,255,255,.6) 46%, transparent 60%);
+    background-size:250% 100%;
+    animation:sheen 1.1s ease .2s both;
   }
+  @keyframes sheen{from{background-position:150% 0;} to{background-position:-90% 0;}}
+  .card .eyebrow{color:var(--rust);}
+  .card h3{font-size:26px; margin:4px 0 2px; color:var(--ink); font-weight:900; line-height:1.08;}
+  .card .catalog{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; color:var(--ink-soft); text-transform:uppercase;}
+  .card .art{font-size:70px; text-align:center; margin:12px 0;
+    filter:drop-shadow(0 6px 12px rgba(0,0,0,.28)); animation:artIn .55s var(--spring) both;}
+  @keyframes artIn{0%{transform:scale(.3) rotate(-25deg); opacity:0;} 100%{transform:none; opacity:1;}}
   .fact{
-    font-size:16px;
-    background:rgba(180,85,45,0.08);
-    border:1px dashed var(--clay);
-    border-radius:10px;
-    padding:14px;
-    margin:10px 0 16px;
+    font-size:15.5px; background:rgba(224,83,58,.09);
+    border:1.5px dashed var(--rust); border-radius:12px;
+    padding:13px; margin:10px 0 14px;
   }
   .fact .fact-label{
-    font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em;
-    text-transform:uppercase; color:var(--clay); display:block; margin-bottom:6px;
+    font-family:var(--mono); font-size:10.5px; font-weight:600; letter-spacing:.14em;
+    text-transform:uppercase; color:var(--rust); display:block; margin-bottom:5px;
   }
-  .quiz-q{font-weight:700; font-size:17px; margin-bottom:10px;}
-  .choices{display:flex; flex-direction:column; gap:8px; margin-bottom:6px;}
+  .quiz-q{font-weight:700; font-size:16.5px; margin-bottom:9px;}
+  .choices{display:flex; flex-direction:column; gap:8px;}
   .choice{
-    text-align:left;
-    background:#fff8ea;
-    border:2px solid var(--paper-edge);
-    border-radius:10px;
-    padding:12px 14px;
-    font-size:15px;
-    color:var(--ink);
-    transition:border-color .12s ease, transform .08s ease;
+    text-align:left; background:#fffaef; border:2px solid #d8c69f;
+    border-radius:12px; padding:12px 14px; font-size:15px; color:var(--ink);
+    transition:all .12s var(--spring);
   }
-  .choice:active{transform:scale(0.985);}
-  .choice:hover{border-color:var(--clay);}
-  .choice.wrong{border-color:var(--stamp); background:#f6e0d6; animation:shake .35s ease;}
-  .quiz-note{font-size:13px; color:var(--ink-soft); min-height:20px;}
-  .card .actions{display:flex; gap:10px; margin-top:14px;}
+  .choice:hover{border-color:var(--rust); transform:translateX(3px);}
+  .choice:active{transform:scale(.985);}
+  .choice.wrong{border-color:var(--stamp); background:#f7ddd3; animation:tshake .4s ease; opacity:.65;}
+  .choice.right{border-color:#3c8f4e; background:#dcf1de;}
+  .quiz-note{font-size:13px; color:var(--ink-soft); min-height:20px; margin-top:8px;}
+  .card .actions{display:flex; gap:9px; margin-top:14px;}
   .card .actions .btn-main{flex:1;}
-  .btn-paper-ghost{
-    background:transparent; color:var(--ink-soft);
-    border:1.5px solid var(--paper-edge);
-    padding:10px 16px; font-size:15px; font-weight:700;
-  }
 
-  /* stamp */
   .stampwrap{position:relative;}
   .stamp{
-    position:absolute;
-    top:-6px; right:2px;
-    font-family:var(--font-display);
-    font-weight:900;
-    font-size:20px;
-    letter-spacing:0.06em;
-    text-transform:uppercase;
-    color:var(--stamp);
-    border:3px solid var(--stamp);
-    border-radius:8px;
-    padding:4px 10px;
-    transform:rotate(-12deg) scale(3);
-    opacity:0;
-    pointer-events:none;
-    mix-blend-mode:multiply;
+    position:absolute; top:-4px; right:0;
+    font-family:var(--display); font-weight:900; font-size:19px;
+    letter-spacing:.05em; text-transform:uppercase; color:var(--stamp);
+    border:3px solid var(--stamp); border-radius:8px; padding:4px 9px;
+    transform:rotate(-13deg) scale(3); opacity:0;
+    pointer-events:none; mix-blend-mode:multiply;
   }
-  .stamp.slam{animation:slam .45s cubic-bezier(.3,1.4,.5,1) .15s both;}
+  .stamp.slam{animation:slam .5s cubic-bezier(.3,1.5,.5,1) .2s both;}
   @keyframes slam{
-    0%{transform:rotate(-12deg) scale(3); opacity:0;}
-    60%{transform:rotate(-12deg) scale(0.92); opacity:1;}
-    100%{transform:rotate(-12deg) scale(1); opacity:0.92;}
+    0%{transform:rotate(-13deg) scale(3); opacity:0;}
+    60%{transform:rotate(-13deg) scale(.9); opacity:1;}
+    100%{transform:rotate(-13deg) scale(1); opacity:.93;}
   }
 
   /* ---------- journal ---------- */
   .journal{
-    background:var(--paper);
-    color:var(--ink);
-    border-radius:16px;
-    padding:22px 18px;
-    animation:fadeUp .4s ease both;
+    background:linear-gradient(165deg, var(--cream), #e8dabc);
+    color:var(--ink); border-radius:18px; padding:20px 17px;
+    animation:fadeUp .4s var(--spring) both;
+    box-shadow:0 12px 34px rgba(0,0,0,.4);
   }
-  .journal h2{font-size:28px; font-weight:900;}
-  .journal .sub{font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px;}
-  .j-site{margin-bottom:18px;}
-  .j-site h3{
-    font-size:17px; color:var(--clay);
-    border-bottom:2px solid var(--paper-edge);
-    padding-bottom:4px; margin-bottom:8px;
-  }
-  .j-entry{
-    display:flex; gap:12px; align-items:flex-start;
-    padding:10px 0;
-    border-bottom:1px dashed var(--paper-edge);
-  }
+  .journal h2{font-size:27px; font-weight:900;}
+  .journal .sub{font-family:var(--mono); font-size:11px; color:var(--ink-soft);
+    letter-spacing:.1em; text-transform:uppercase; margin-bottom:12px;}
+  .j-site{margin-bottom:16px;}
+  .j-site h3{font-size:16px; color:var(--rust); border-bottom:2px solid #d8c69f;
+    padding-bottom:4px; margin-bottom:6px; font-weight:900;}
+  .j-entry{display:flex; gap:11px; align-items:flex-start; padding:9px 0; border-bottom:1px dashed #d8c69f;}
   .j-entry:last-child{border-bottom:none;}
-  .j-entry .em{font-size:28px; flex-shrink:0;}
-  .j-entry .nm{font-weight:700; font-size:15px;}
-  .j-entry .fx{font-size:13.5px; color:var(--ink-soft);}
-  .j-entry.locked{opacity:0.45;}
+  .j-entry .em{font-size:26px; flex-shrink:0;}
+  .j-entry .nm{font-weight:700; font-size:14.5px;}
+  .j-entry .fx{font-size:13px; color:var(--ink-soft);}
+  .j-entry.locked{opacity:.42;}
   .j-entry.locked .nm{font-style:italic;}
-  .journal-count{
-    font-family:var(--font-mono);
-    font-size:13px;
-    text-align:center;
-    color:var(--ink-soft);
-    margin-top:8px;
-  }
+  .journal-count{font-family:var(--mono); font-size:12.5px; text-align:center; color:var(--ink-soft); margin-top:6px;}
+  .journal-link{margin-top:16px; width:100%;}
 
   @keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
-  @keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
-  @keyframes cardIn{from{opacity:0; transform:translateY(26px) scale(0.96);} to{opacity:1; transform:none;}}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:none;}}
+  @keyframes cardIn{from{opacity:0; transform:translateY(30px) scale(.94);} to{opacity:1; transform:none;}}
 
   @media (prefers-reduced-motion: reduce){
-    *, *::before, *::after{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+    *,*::before,*::after{animation-duration:.01ms !important; transition-duration:.01ms !important;}
+    .particle{display:none;}
   }
 </style>
 </head>
 <body>
 <div id="app"></div>
+<div id="fx"></div>
 
 <script>
 "use strict";
@@ -661,9 +626,11 @@ const SITES = [
     ]
   }
 ];
-
-const GRID_COLS = 5, GRID_ROWS = 6;
+const GRID_COLS = 5, GRID_ROWS = 5;
 const FRAGS_PER_ARTIFACT = 3;
+// each buried find at a site gets its own colour + number, so pieces of the
+// same artifact are visibly a matching set on the board
+const FRAG_COLORS = ["#ffc233", "#3ddad7", "#ff6ba8"];
 
 /* =========================================================
    QUESTS — missions built from certified finds. The quests
@@ -671,8 +638,7 @@ const FRAGS_PER_ARTIFACT = 3;
    ========================================================= */
 const QUESTS = [
   { id:"first",   emoji:"🎖️", name:"First Find",
-    desc:"Certify your very first artifact.",
-    kind:"count", target:1 },
+    desc:"Certify your very first artifact.", kind:"count", target:1 },
   { id:"writing", emoji:"✍️", name:"The Written Word",
     desc:"Recover writing from three different civilizations.",
     kind:"ids", ids:["rosetta","papyrus","glyphs"] },
@@ -686,47 +652,45 @@ const QUESTS = [
     desc:"Recover proof of brilliant ancient inventors.",
     kind:"ids", ids:["zero","mechanism"] },
   { id:"leader",  emoji:"🚩", name:"Site Leader",
-    desc:"Certify every find at any one dig site.",
-    kind:"site" },
+    desc:"Certify every find at any one dig site.", kind:"site" },
   { id:"master",  emoji:"🏆", name:"Master Archaeologist",
-    desc:"Certify every artifact in the world.",
-    kind:"all" }
+    desc:"Certify every artifact in the world.", kind:"all" }
 ];
+
+/* ---------------- state ---------------- */
+const state = {
+  screen:"title",
+  found:{},
+  celebrated:{},
+  siteId:null,
+  dig:null,
+  tool:"brush",
+  tip:null,
+  muted:false,
+  journalBack:"map"
+};
+
+function foundCount(site){ return site.artifacts.filter(a=>state.found[a.id]).length; }
+function totalFound(){ return SITES.reduce((n,s)=>n+foundCount(s),0); }
+function totalArtifacts(){ return SITES.reduce((n,s)=>n+s.artifacts.length,0); }
 
 function questProgress(q){
   if(q.kind==="count") return { done: Math.min(totalFound(), q.target), total: q.target };
   if(q.kind==="ids")   return { done: q.ids.filter(id=>state.found[id]).length, total: q.ids.length };
   if(q.kind==="site"){
-    const best = Math.max(...SITES.map(s=>foundCount(s)===s.artifacts.length ? s.artifacts.length : 0), 0);
-    const cap = Math.max(...SITES.map(s=>s.artifacts.length));
-    return best>0 ? { done:1, total:1 } : { done: Math.min(Math.max(...SITES.map(foundCount)), cap-1), total: cap, showAs:"site" };
+    const complete = SITES.some(s=>foundCount(s)===s.artifacts.length);
+    return complete ? { done:1, total:1 } : { done:0, total:1 };
   }
   return { done: totalFound(), total: totalArtifacts() };
 }
 function questDone(q){ const p=questProgress(q); return p.done>=p.total; }
 
-
-/* ---------------- state ---------------- */
-const state = {
-  screen:"title",            // title | map | dig | journal | quests
-  found:{},                  // artifactId -> true (certified)
-  celebrated:{},             // questId -> true (badge ceremony already shown)
-  siteId:null,
-  dig:null,                  // { tiles:[], targets:{artifactId:[tileIdx]}, revealed:{artifactId:count} }
-  tool:"brush",
-  tip:null,
-  shownBrushLesson:false,
-  journalBack:"map"
-};
-
-/* ---------------- saving (works when hosted, e.g. GitHub Pages) ---------------- */
+/* ---------------- saving ---------------- */
 const SAVE_KEY = "digquest-save-v1";
 function saveProgress(){
   try{
     localStorage.setItem(SAVE_KEY, JSON.stringify({
-      found: state.found,
-      celebrated: state.celebrated,
-      shownBrushLesson: state.shownBrushLesson
+      found: state.found, celebrated: state.celebrated, muted: state.muted
     }));
   }catch(e){ /* storage unavailable — play continues, just without saving */ }
 }
@@ -736,7 +700,6 @@ function loadProgress(){
     if(!raw) return;
     const data = JSON.parse(raw);
     if(data && typeof data.found === "object" && data.found !== null){
-      // only accept known artifact ids — keeps the save honest
       const validIds = new Set(SITES.flatMap(s=>s.artifacts.map(a=>a.id)));
       for(const id of Object.keys(data.found)){
         if(validIds.has(id) && data.found[id] === true) state.found[id] = true;
@@ -747,27 +710,103 @@ function loadProgress(){
           if(validQ.has(id) && data.celebrated[id] === true) state.celebrated[id] = true;
         }
       }
-      state.shownBrushLesson = !!data.shownBrushLesson;
+      state.muted = !!data.muted;
     }
   }catch(e){ /* corrupted or unavailable — start fresh */ }
-  // any quest already complete gets marked quietly, so reopening
-  // the game never triggers a pile of old badge ceremonies
+  // quests already complete are marked quietly, so reopening the game
+  // never triggers a pile of old badge ceremonies
   QUESTS.forEach(q=>{ if(questDone(q)) state.celebrated[q.id] = true; });
 }
 function resetProgress(){
   try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
-  state.found = {};
-  state.celebrated = {};
-  state.shownBrushLesson = false;
-  state.screen = "map";
-  render();
+  state.found = {}; state.celebrated = {};
+  state.screen = "map"; render();
 }
 
-function foundCount(site){ return site.artifacts.filter(a=>state.found[a.id]).length; }
-function totalFound(){ return SITES.reduce((n,s)=>n+foundCount(s),0); }
-function totalArtifacts(){ return SITES.reduce((n,s)=>n+s.artifacts.length,0); }
+/* ---------------- sound (synthesized — no files needed) ---------------- */
+let actx = null, audioTried = false;
+function ac(){
+  if(!audioTried){
+    audioTried = true;
+    try{ actx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ actx = null; }
+  }
+  if(actx && actx.state === "suspended"){ try{ actx.resume(); }catch(e){} }
+  return actx;
+}
+function tone(freq, dur, type, vol, delay){
+  const c = ac(); if(!c || state.muted) return;
+  try{
+    const o = c.createOscillator(), g = c.createGain();
+    o.type = type || "sine"; o.frequency.value = freq;
+    o.connect(g); g.connect(c.destination);
+    const t = c.currentTime + (delay || 0);
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol || 0.12, t + 0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+    o.start(t); o.stop(t + dur + 0.03);
+  }catch(e){}
+}
+function thud(){
+  const c = ac(); if(!c || state.muted) return;
+  try{
+    const len = Math.floor(c.sampleRate * 0.13);
+    const buf = c.createBuffer(1, len, c.sampleRate);
+    const dat = buf.getChannelData(0);
+    for(let i=0;i<len;i++) dat[i] = (Math.random()*2-1) * Math.pow(1 - i/len, 2.5);
+    const src = c.createBufferSource(); src.buffer = buf;
+    const f = c.createBiquadFilter(); f.type = "lowpass"; f.frequency.value = 700;
+    const g = c.createGain(); g.gain.value = 0.14;
+    src.connect(f); f.connect(g); g.connect(c.destination);
+    src.start();
+  }catch(e){}
+}
+const SFX = {
+  dig(){ thud(); },
+  clink(){ tone(880, .12, "triangle", .1); },
+  fragment(){ tone(660, .1, "triangle", .12); tone(990, .22, "triangle", .1, .08); },
+  reveal(){ [523,659,784,1047].forEach((f,i)=>tone(f, .5, "triangle", .11, i*0.075)); },
+  correct(){ [659,880,1319].forEach((f,i)=>tone(f, .35, "sine", .12, i*0.07)); },
+  wrong(){ tone(200, .18, "sawtooth", .07); },
+  quest(){ [523,659,784,1047,1319].forEach((f,i)=>tone(f, .6, "sine", .1, i*0.09)); },
+  nope(){ tone(150, .12, "square", .05); }
+};
+
+/* ---------------- particles ---------------- */
+function burst(el, color, n){
+  try{
+    if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const host = document.getElementById("fx"); if(!host || !el) return;
+    const r = el.getBoundingClientRect();
+    const cx = r.left + r.width/2, cy = r.top + r.height/2;
+    for(let i=0;i<(n||9);i++){
+      const p = document.createElement("div");
+      p.className = "particle";
+      const a = Math.random()*Math.PI*2, d = 18 + Math.random()*52;
+      const s = 3 + Math.random()*6;
+      p.style.setProperty("--dx", (Math.cos(a)*d)+"px");
+      p.style.setProperty("--dy", (Math.sin(a)*d + 14)+"px");
+      p.style.left = cx+"px"; p.style.top = cy+"px";
+      p.style.width = p.style.height = s+"px";
+      p.style.background = color;
+      p.style.animationDelay = (Math.random()*0.05)+"s";
+      host.appendChild(p);
+      setTimeout(()=>p.remove(), 800);
+    }
+  }catch(e){}
+}
+function shakeScreen(){
+  try{
+    if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const app = document.getElementById("app"); if(!app) return;
+    app.classList.remove("shakescreen"); void app.offsetWidth; app.classList.add("shakescreen");
+    setTimeout(()=>app.classList.remove("shakescreen"), 420);
+  }catch(e){}
+}
 
 /* ---------------- dig setup ---------------- */
+function artIndex(site, id){ return site.artifacts.findIndex(a=>a.id===id); }
+function fragColor(site, id){ return FRAG_COLORS[artIndex(site, id) % FRAG_COLORS.length]; }
+
 function startDig(siteId){
   const site = SITES.find(s=>s.id===siteId);
   const remaining = site.artifacts.filter(a=>!state.found[a.id]);
@@ -775,13 +814,11 @@ function startDig(siteId){
   const tiles = [];
   for(let i=0;i<total;i++) tiles.push({depth:2, artifact:null, revealed:false});
 
-  // scatter fragments for artifacts not yet certified
   const idxs = shuffle([...Array(total).keys()]);
   const targets = {}, revealed = {};
   let cursor = 0;
   remaining.forEach(a=>{
-    targets[a.id] = [];
-    revealed[a.id] = 0;
+    targets[a.id] = []; revealed[a.id] = 0;
     for(let f=0; f<FRAGS_PER_ARTIFACT; f++){
       const t = idxs[cursor++];
       tiles[t].artifact = a.id;
@@ -793,7 +830,7 @@ function startDig(siteId){
   state.dig = { tiles, targets, revealed };
   state.tool = "brush";
   state.tip = remaining.length
-    ? `Tap squares to dig. <b>${remaining.length * FRAGS_PER_ARTIFACT} fragments</b> are buried here — each artifact takes <b>${FRAGS_PER_ARTIFACT} pieces</b>, hidden in different squares. Fragile finds need the <b>🖌️ brush</b>.`
+    ? `Dig by tapping squares. <b>${remaining.length} artifacts</b> are buried here — each one is <b>${FRAGS_PER_ARTIFACT} pieces</b> scattered apart. Matching pieces share a <b>colour and number</b>.`
     : "You've certified every find here. Head back to the map and visit another site!";
   state.screen = "dig";
   render();
@@ -808,37 +845,40 @@ function shuffle(arr){
 }
 
 /* ---------------- dig actions ---------------- */
-
-// how many fragment squares are still buried in this trench?
-function fragmentsLeft(){
-  return state.dig.tiles.filter(t=>t.artifact && !t.revealed).length;
-}
+function fragmentsLeft(){ return state.dig.tiles.filter(t=>t.artifact && !t.revealed).length; }
 
 function digTile(idx, el){
-  if(modal) return; // no digging while a discovery card is open
+  if(modal) return;
   const d = state.dig;
   const t = d.tiles[idx];
+  const site = SITES.find(s=>s.id===state.siteId);
 
-  // Already-recovered fragment: say what's still missing instead of going silent
+  // already-recovered fragment: show its whole set so the board explains itself
   if(t.revealed){
+    const n = artIndex(site, t.artifact) + 1;
     const got = d.revealed[t.artifact];
     const left = FRAGS_PER_ARTIFACT - got;
+    SFX.clink();
+    // pulse every piece of this same artifact so the set is obvious
+    document.querySelectorAll('.tile.fragment[data-a="'+t.artifact+'"]').forEach(f=>{
+      f.classList.remove("pulse"); void f.offsetWidth; f.classList.add("pulse");
+    });
     setTip(left > 0
-      ? `You already recovered this piece. <b>${left} more piece${left>1?"s":""}</b> of this artifact ${left>1?"are":"is"} buried in <b>other squares</b> — keep digging!`
-      : `This piece is safely recovered.`);
+      ? `That's <b>find ${n}</b> — you have <b>${got} of ${FRAGS_PER_ARTIFACT}</b> of its pieces (they're glowing now). <b>${left} more</b> buried in other squares.`
+      : `Find ${n} is fully recovered.`);
     return;
   }
 
-  // Already-cleared empty square
   if(t.depth===0){
-    setTip(`Nothing was buried here. <b>${fragmentsLeft()} fragment${fragmentsLeft()===1?"":"s"}</b> still hidden in this trench — try a square that still has dirt.`);
+    SFX.nope();
+    setTip(`Nothing was buried here. <b>${fragmentsLeft()} piece${fragmentsLeft()===1?"":"s"}</b> still hidden — try a square that still has dirt.`);
     return;
   }
 
   if(t.artifact){
     if(state.tool==="shovel"){
-      // real archaeology: delicate finds need delicate tools
       el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+      SFX.nope();
       setTip("⚠️ Careful — something <b>fragile</b> is buried here! A shovel could break it. Tap <b>🖌️ Brush</b> below, then tap this square again.");
       return;
     }
@@ -846,31 +886,38 @@ function digTile(idx, el){
     if(t.depth===0){
       t.revealed = true;
       d.revealed[t.artifact]++;
-      const site = SITES.find(s=>s.id===state.siteId);
       const art = site.artifacts.find(a=>a.id===t.artifact);
       const got = d.revealed[t.artifact];
+      const n = artIndex(site, t.artifact) + 1;
+      const col = fragColor(site, t.artifact);
+      burst(el, col, 14);
       if(got < FRAGS_PER_ARTIFACT){
+        SFX.fragment();
         const left = FRAGS_PER_ARTIFACT - got;
-        setTip(`🧩 A fragment! That's <b>${got} of ${FRAGS_PER_ARTIFACT}</b> pieces. The other ${left} ${left>1?"pieces are":"piece is"} in <b>other squares</b> — keep digging to finish it.`);
+        setTip(`🧩 A piece of <b>find ${n}</b>! That's <b>${got} of ${FRAGS_PER_ARTIFACT}</b>. Look for <b>${left} more</b> with the same colour and number.`);
         render();
       }else{
+        SFX.reveal(); shakeScreen();
         render();
-        setTimeout(()=>openDiscovery(art), 350);
+        setTimeout(()=>openDiscovery(art), 400);
       }
     }else{
+      SFX.dig();
+      burst(el, "#a86c3c", 6);
       setTip("Something's under here — <b>brush again</b> on this same square to lift it out.");
       render();
     }
   }else{
-    // empty ground
+    SFX.dig();
+    burst(el, "#8a5a30", 7);
     if(state.tool==="brush"){
-      t.depth--; // brush works, just normal pace
+      t.depth--;
       setTip(t.depth===0
-        ? `Just dirt here. <b>${fragmentsLeft()} fragment${fragmentsLeft()===1?"":"s"}</b> still buried — try another square.`
+        ? `Just dirt here. <b>${fragmentsLeft()} piece${fragmentsLeft()===1?"":"s"}</b> still buried — try another square.`
         : "Brushing... tap this square again to finish clearing it.");
     }else{
-      t.depth = 0; // shovel clears empty ground fast
-      setTip(`Cleared! Nothing buried there. <b>${fragmentsLeft()} fragment${fragmentsLeft()===1?"":"s"}</b> still hidden in this trench.`);
+      t.depth = 0;
+      setTip(`Cleared! Nothing buried there. <b>${fragmentsLeft()} piece${fragmentsLeft()===1?"":"s"}</b> still hidden in this trench.`);
     }
     render();
   }
@@ -886,7 +933,7 @@ function setTip(html){
 }
 
 /* ---------------- discovery + quiz ---------------- */
-let modal = null; // {art, phase:"fact"|"quiz"|"certified"} or {quest}
+let modal = null;
 const discoveryQueue = [];
 const questQueue = [];
 
@@ -895,30 +942,23 @@ function openDiscovery(art){
   modal = { art, phase:"fact", wrongPicks:new Set() };
   render();
 }
-
 function closeModal(){
   modal = null;
   if(discoveryQueue.length){ openDiscovery(discoveryQueue.shift()); return; }
-  if(questQueue.length){ modal = { quest: questQueue.shift() }; render(); return; }
-  // refresh tip for remaining work at this site
+  if(questQueue.length){ modal = { quest: questQueue.shift() }; SFX.quest(); render(); return; }
   const site = SITES.find(s=>s.id===state.siteId);
   const remaining = site ? site.artifacts.filter(a=>!state.found[a.id]).length : 0;
   state.tip = remaining
-    ? "Back to the trench — more fragments are still buried here."
-    : "Site complete! Head back to the map to choose your next expedition.";
+    ? "Back to the trench — more pieces are still buried here."
+    : "🎉 Site complete! Head back to the map to choose your next expedition.";
   render();
 }
-
-function toQuiz(){
-  modal.phase = "quiz";
-  render();
-}
+function toQuiz(){ modal.phase = "quiz"; render(); }
 
 function pickChoice(i, btn){
   const art = modal.art;
   if(i === art.q.answer){
     state.found[art.id] = true;
-    // did that certification complete any quests?
     QUESTS.forEach(q=>{
       if(!state.celebrated[q.id] && questDone(q)){
         state.celebrated[q.id] = true;
@@ -926,9 +966,12 @@ function pickChoice(i, btn){
       }
     });
     saveProgress();
+    SFX.correct();
+    btn.classList.add("right");
     modal.phase = "certified";
     render();
   }else{
+    SFX.wrong();
     modal.wrongPicks.add(i);
     btn.classList.add("wrong");
     const note = document.getElementById("quiznote");
@@ -938,7 +981,7 @@ function pickChoice(i, btn){
 
 /* ---------------- rendering ---------------- */
 function h(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content; }
-function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
 
 function render(){
   const app = document.getElementById("app");
@@ -962,7 +1005,7 @@ function renderTitle(){
       <div><button class="btn-main" id="start">${hasSave ? "Continue expedition ("+totalFound()+"/"+totalArtifacts()+" finds)" : "Start the expedition"}</button></div>
     </div>
   `);
-  frag.getElementById("start").onclick = ()=>{ state.screen="map"; render(); };
+  frag.getElementById("start").onclick = ()=>{ ac(); SFX.clink(); state.screen="map"; render(); };
   return frag;
 }
 
@@ -972,11 +1015,14 @@ function renderMap(){
     <div>
       <div class="topbar">
         <span class="title">⛏️ Dig Quest</span>
-        <span class="eyebrow">${done}/${total} certified</span>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <span class="eyebrow">${done}/${total} certified</span>
+          <button class="mute" id="mute" aria-label="sound">${state.muted?"🔇":"🔊"}</button>
+        </span>
       </div>
       <div class="map-head">
         <h2>Choose a dig site</h2>
-        <p>Four real places. Twelve real finds. Where to first?</p>
+        <p>Five real places. Fifteen real finds. Where to first?</p>
       </div>
       <div class="sites" id="sites"></div>
       ${done===total ? `
@@ -986,31 +1032,33 @@ function renderMap(){
           <p>You certified every artifact — and every fact you learned along the way is true.</p>
         </div>` : ``}
       <div class="nav-row">
-        <button class="btn-ghost" id="quests">🗺️ Quest Board (${QUESTS.filter(questDone).length}/${QUESTS.length})</button>
-        <button class="btn-ghost" id="journal">📓 Field Journal</button>
+        <button class="btn-ghost" id="quests">🗺️ Quests (${QUESTS.filter(questDone).length}/${QUESTS.length})</button>
+        <button class="btn-ghost" id="journal">📓 Journal</button>
       </div>
     </div>
   `);
   const wrap = frag.getElementById("sites");
-  SITES.forEach(site=>{
+  SITES.forEach((site,i)=>{
     const n = foundCount(site), t = site.artifacts.length;
     const card = h(`
-      <button class="site-card">
+      <button class="site-card" style="animation-delay:${i*0.05}s">
         <span class="site-emoji">${site.emoji}</span>
         <span class="site-info">
           <span class="where">${esc(site.where)}</span>
           <h3>${esc(site.name)}</h3>
           <span class="prog">${esc(site.blurb)}</span>
-          <span class="prog">Finds certified: ${n} / ${t}</span>
+          <span class="site-bar"><i style="width:${(n/t)*100}%"></i></span>
+          <span class="prog">${n} / ${t} certified</span>
         </span>
         ${n===t ? `<span class="site-done">✔</span>`:""}
       </button>
     `).firstElementChild;
-    card.onclick = ()=>startDig(site.id);
+    card.onclick = ()=>{ ac(); SFX.clink(); startDig(site.id); };
     wrap.append(card);
   });
   frag.getElementById("journal").onclick = ()=>{ state.journalBack="map"; state.screen="journal"; render(); };
-  frag.getElementById("quests").onclick = ()=>{ state.journalBack="map"; state.screen="quests"; render(); };
+  frag.getElementById("quests").onclick = ()=>{ state.screen="quests"; render(); };
+  frag.getElementById("mute").onclick = ()=>{ state.muted=!state.muted; saveProgress(); render(); };
   return frag;
 }
 
@@ -1029,45 +1077,24 @@ function renderQuests(){
     </div>
   `);
   const wrap = frag.getElementById("qlist");
-  QUESTS.forEach(q=>{
+  QUESTS.forEach((q,i)=>{
     const p = questProgress(q);
     const done = p.done>=p.total;
-    let progText;
-    if(done) progText = "Complete!";
-    else if(q.kind==="site") progText = "Best site so far: " + Math.max(...SITES.map(foundCount)) + " finds certified";
-    else progText = `Progress: ${p.done} / ${p.total}`;
+    const pct = Math.round((p.done/p.total)*100);
+    const progText = done ? "Complete!" : `Progress: ${p.done} / ${p.total}`;
     wrap.append(h(`
-      <div class="site-card quest-card ${done?"quest-done":""}">
+      <div class="site-card quest-card ${done?"quest-done":""}" style="animation-delay:${i*0.04}s">
         <span class="site-emoji">${q.emoji}</span>
         <span class="site-info">
           <h3>${esc(q.name)}</h3>
           <span class="prog">${esc(q.desc)}</span>
+          <span class="site-bar"><i style="width:${pct}%"></i></span>
           <span class="prog ${done?"prog-done":""}">${esc(progText)}</span>
         </span>
         ${done?`<span class="site-done">✔</span>`:""}
       </div>`));
   });
   frag.getElementById("back").onclick = ()=>{ state.screen="map"; render(); };
-  return frag;
-}
-
-function renderQuestModal(){
-  const q = modal.quest;
-  const frag = h(`
-    <div class="overlay"><div class="card">
-      <div class="stampwrap">
-        <span class="eyebrow">Quest complete</span>
-        <h3>${esc(q.name)}</h3>
-        <div class="art">${q.emoji}</div>
-        <span class="stamp slam">Quest Done</span>
-      </div>
-      <div class="fact"><span class="fact-label">Mission accomplished</span>${esc(q.desc)} You earned the ${q.emoji} ${esc(q.name)} badge — see it on the Quest Board.</div>
-      <div class="actions">
-        <button class="btn-main" id="close">Onward!</button>
-      </div>
-    </div></div>
-  `);
-  frag.getElementById("close").onclick = closeModal;
   return frag;
 }
 
@@ -1078,7 +1105,10 @@ function renderDig(){
     <div>
       <div class="topbar">
         <button class="btn-ghost" id="back">← Map</button>
-        <button class="btn-ghost" id="journal">📓 Journal</button>
+        <span style="display:flex; align-items:center; gap:8px;">
+          <button class="btn-ghost" id="journal">📓</button>
+          <button class="mute" id="mute" aria-label="sound">${state.muted?"🔇":"🔊"}</button>
+        </span>
       </div>
       <div class="dig-head">
         <h2>${site.emoji} ${esc(site.name)}</h2>
@@ -1095,37 +1125,46 @@ function renderDig(){
   `);
 
   const tracker = frag.getElementById("tracker");
-  let n = 0;
-  site.artifacts.forEach(a=>{
-    n++;
+  site.artifacts.forEach((a,i)=>{
+    const col = FRAG_COLORS[i % FRAG_COLORS.length];
     if(state.found[a.id]){
-      tracker.append(h(`<span class="frag-pill found-all">${a.emoji} ${esc(a.name)} ✔</span>`));
+      tracker.append(h(`<span class="frag-pill full" style="color:${col}; border-color:${col}">${a.emoji} ${esc(a.name)} ✔</span>`));
     }else{
       const got = d.revealed[a.id]||0;
-      tracker.append(h(`<span class="frag-pill ${got===FRAGS_PER_ARTIFACT?"found-all":""}">Buried find ${n}: 🧩 ${got}/${FRAGS_PER_ARTIFACT} pieces</span>`));
+      const full = got===FRAGS_PER_ARTIFACT;
+      tracker.append(h(`<span class="frag-pill ${got>0?"live":""} ${full?"full":""}" style="${got>0?`border-color:${col}`:""}">
+        <span class="dot" style="background:${col}; color:${col}"></span>Find ${i+1}: ${got}/${FRAGS_PER_ARTIFACT}
+      </span>`));
     }
   });
 
   const grid = frag.getElementById("grid");
   d.tiles.forEach((t,i)=>{
-    let cls="tile", label="";
-    if(t.revealed){ cls+=" fragment"; label="🧩"; }
+    let cls="tile", label="", extra="";
+    if(t.revealed){
+      const n = artIndex(site, t.artifact) + 1;
+      const col = fragColor(site, t.artifact);
+      cls += " fragment";
+      label = `<span class="fi">🧩</span>`;
+      extra = ` style="--fc:${col}" data-n="${n}" data-a="${esc(t.artifact)}"`;
+    }
     else if(t.depth===0){ cls+=" cleared"; }
     else if(t.depth===1){ cls+=" depth1"; }
-    const el = h(`<button class="${cls}" aria-label="dig square ${i+1}">${label}</button>`).firstElementChild;
+    const el = h(`<button class="${cls}"${extra} aria-label="dig square ${i+1}">${label}</button>`).firstElementChild;
     el.onclick = ()=>digTile(i, el);
     grid.append(el);
   });
 
   frag.getElementById("back").onclick = ()=>{ state.screen="map"; render(); };
   frag.getElementById("journal").onclick = ()=>{ state.journalBack="dig"; state.screen="journal"; render(); };
+  frag.getElementById("mute").onclick = ()=>{ state.muted=!state.muted; saveProgress(); render(); };
   frag.getElementById("toolBrush").onclick = ()=>{
-    state.tool="brush";
-    state.tip = "🖌️ <b>Brush ready.</b> Slower on plain dirt, but it's the only tool that can lift a fragile find. Tap a square twice to clear it.";
+    ac(); SFX.clink(); state.tool="brush";
+    state.tip = "🖌️ <b>Brush ready.</b> Slower on plain dirt, but it's the only tool that can lift a fragile find.";
     render();
   };
   frag.getElementById("toolShovel").onclick = ()=>{
-    state.tool="shovel";
+    ac(); SFX.clink(); state.tool="shovel";
     state.tip = "⛏️ <b>Shovel ready.</b> Clears empty dirt in one tap — great for searching fast. It won't touch fragile finds.";
     render();
   };
@@ -1142,9 +1181,7 @@ function renderModal(){
       <div class="catalog">Catalog № ${art.cat}</div>
       <div class="art">${art.emoji}</div>
       <div class="fact"><span class="fact-label">Field Fact — verified</span>${esc(art.fact)}</div>
-      <div class="actions">
-        <button class="btn-main" id="next">I read it — quiz me!</button>
-      </div>
+      <div class="actions"><button class="btn-main" id="next">I read it — quiz me!</button></div>
     `;
   }else if(modal.phase==="quiz"){
     inner = `
@@ -1166,9 +1203,7 @@ function renderModal(){
         <span class="stamp slam">Certified Find</span>
       </div>
       <div class="fact"><span class="fact-label">You learned a true thing</span>${esc(art.fact)}</div>
-      <div class="actions">
-        <button class="btn-main" id="close">Keep digging</button>
-      </div>
+      <div class="actions"><button class="btn-main" id="close">Keep digging</button></div>
     `;
   }
   const frag = h(`<div class="overlay"><div class="card">${inner}</div></div>`);
@@ -1184,6 +1219,24 @@ function renderModal(){
   }else{
     frag.getElementById("close").onclick = closeModal;
   }
+  return frag;
+}
+
+function renderQuestModal(){
+  const q = modal.quest;
+  const frag = h(`
+    <div class="overlay"><div class="card">
+      <div class="stampwrap">
+        <span class="eyebrow">Quest complete</span>
+        <h3>${esc(q.name)}</h3>
+        <div class="art">${q.emoji}</div>
+        <span class="stamp slam">Quest Done</span>
+      </div>
+      <div class="fact"><span class="fact-label">Mission accomplished</span>${esc(q.desc)} You earned the ${q.emoji} ${esc(q.name)} badge — see it on the Quest Board.</div>
+      <div class="actions"><button class="btn-main" id="close">Onward!</button></div>
+    </div></div>
+  `);
+  frag.getElementById("close").onclick = closeModal;
   return frag;
 }
 
@@ -1203,16 +1256,6 @@ function renderJournal(){
       <button class="btn-ghost journal-link" id="reset">Start a brand-new expedition</button>
     </div>
   `);
-  const resetBtn = frag.getElementById("reset");
-  resetBtn.onclick = ()=>{
-    if(resetBtn.dataset.armed){
-      resetProgress();
-    }else{
-      resetBtn.dataset.armed = "1";
-      resetBtn.textContent = "Really erase the whole journal? Tap again to confirm";
-      setTimeout(()=>{ if(document.body.contains(resetBtn)){ delete resetBtn.dataset.armed; resetBtn.textContent = "Start a brand-new expedition"; } }, 4000);
-    }
-  };
   const wrap = frag.getElementById("entries");
   SITES.forEach(site=>{
     const sec = h(`<div class="j-site"><h3>${site.emoji} ${esc(site.name)}, ${esc(site.where)}</h3></div>`).firstElementChild;
@@ -1222,7 +1265,7 @@ function renderJournal(){
           <div class="j-entry">
             <span class="em">${a.emoji}</span>
             <span>
-              <span class="nm">${esc(a.name)} · <span style="font-family:var(--font-mono); font-size:11px;">${a.cat}</span></span><br>
+              <span class="nm">${esc(a.name)} · <span style="font-family:var(--mono); font-size:10.5px;">${a.cat}</span></span><br>
               <span class="fx">${esc(a.fact)}</span>
             </span>
           </div>`));
@@ -1238,6 +1281,15 @@ function renderJournal(){
     wrap.append(sec);
   });
   frag.getElementById("back").onclick = ()=>{ state.screen = state.journalBack||"map"; render(); };
+  const resetBtn = frag.getElementById("reset");
+  resetBtn.onclick = ()=>{
+    if(resetBtn.dataset.armed){ resetProgress(); }
+    else{
+      resetBtn.dataset.armed = "1";
+      resetBtn.textContent = "Really erase the whole journal? Tap again to confirm";
+      setTimeout(()=>{ if(document.body.contains(resetBtn)){ delete resetBtn.dataset.armed; resetBtn.textContent = "Start a brand-new expedition"; } }, 4000);
+    }
+  };
   return frag;
 }
 
