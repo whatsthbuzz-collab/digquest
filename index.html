@@ -1,0 +1,1212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dig Quest — A Field Journal Adventure</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,700;9..144,900&family=Atkinson+Hyperlegible:wght@400;700&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --night:#221812;
+    --night-2:#2e2118;
+    --lantern:#e8a33d;
+    --lantern-soft:#f2c069;
+    --sand:#d9c7a7;
+    --sand-dim:#a8987c;
+    --paper:#efe3c8;
+    --paper-edge:#d8c69f;
+    --ink:#2a2118;
+    --ink-soft:#5a4b38;
+    --clay:#b4552d;
+    --moss:#6d7048;
+    --dirt-1:#4a3423;
+    --dirt-2:#6b4c30;
+    --dirt-3:#8a6a44;
+    --stamp:#8c2f1b;
+    --font-display:'Fraunces', Georgia, serif;
+    --font-body:'Atkinson Hyperlegible', 'Segoe UI', system-ui, sans-serif;
+    --font-mono:'IBM Plex Mono', 'Courier New', monospace;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+  html,body{height:100%;}
+  body{
+    background:
+      radial-gradient(1100px 600px at 50% -10%, rgba(232,163,61,0.14), transparent 60%),
+      var(--night);
+    color:var(--sand);
+    font-family:var(--font-body);
+    line-height:1.5;
+    min-height:100dvh;
+  }
+  #app{
+    max-width:560px;
+    margin:0 auto;
+    padding:16px 16px 48px;
+    min-height:100dvh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* ---------- shared bits ---------- */
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--lantern);
+  }
+  h1,h2,h3{font-family:var(--font-display); line-height:1.12;}
+  button{
+    font-family:var(--font-body);
+    cursor:pointer;
+    border:none;
+    border-radius:10px;
+  }
+  button:focus-visible, .tile:focus-visible{
+    outline:3px solid var(--lantern);
+    outline-offset:2px;
+  }
+  .btn-main{
+    background:var(--lantern);
+    color:var(--ink);
+    font-weight:700;
+    font-size:17px;
+    padding:14px 26px;
+    border-radius:12px;
+    box-shadow:0 4px 0 rgba(0,0,0,0.35);
+    transition:transform .08s ease;
+  }
+  .btn-main:active{transform:translateY(3px); box-shadow:0 1px 0 rgba(0,0,0,0.35);}
+  .btn-ghost{
+    background:transparent;
+    color:var(--sand);
+    border:1.5px solid var(--sand-dim);
+    padding:10px 18px;
+    font-size:15px;
+    font-weight:700;
+  }
+  .btn-ghost:active{background:rgba(217,199,167,0.12);}
+  .topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    gap:8px; margin-bottom:18px;
+  }
+  .topbar .title{font-family:var(--font-display); font-weight:700; font-size:18px; color:var(--sand);}
+
+  /* ---------- title screen ---------- */
+  .screen-title{
+    flex:1; display:flex; flex-direction:column; justify-content:center; text-align:center; gap:22px;
+    animation:fadeUp .5s ease both;
+  }
+  .title-emblem{
+    font-size:64px; line-height:1;
+    filter:drop-shadow(0 6px 12px rgba(0,0,0,0.5));
+  }
+  .screen-title h1{
+    font-size:clamp(42px, 11vw, 58px);
+    font-weight:900;
+    color:var(--paper);
+    letter-spacing:-0.01em;
+  }
+  .screen-title h1 .accent{color:var(--lantern);}
+  .tagline{color:var(--sand); font-size:17px; max-width:38ch; margin:0 auto;}
+  .promise{
+    font-family:var(--font-mono);
+    font-size:12px;
+    color:var(--sand-dim);
+    letter-spacing:0.06em;
+    border-top:1px dashed var(--sand-dim);
+    border-bottom:1px dashed var(--sand-dim);
+    padding:10px 0;
+    max-width:40ch;
+    margin:0 auto;
+  }
+  .promise b{color:var(--lantern-soft); font-weight:500;}
+
+  /* ---------- map screen ---------- */
+  .map-head{margin-bottom:16px;}
+  .map-head h2{font-size:30px; color:var(--paper); font-weight:700;}
+  .map-head p{color:var(--sand-dim); font-size:15px;}
+  .sites{display:flex; flex-direction:column; gap:12px;}
+  .site-card{
+    display:flex; align-items:center; gap:14px;
+    width:100%; text-align:left;
+    background:var(--night-2);
+    border:1.5px solid #4a382a;
+    border-radius:14px;
+    padding:14px;
+    color:var(--sand);
+    transition:transform .08s ease, border-color .15s ease;
+  }
+  .site-card:active{transform:scale(0.985);}
+  .site-card:hover{border-color:var(--lantern);}
+  .site-emoji{
+    font-size:34px; width:56px; height:56px;
+    display:grid; place-items:center;
+    background:rgba(232,163,61,0.1);
+    border-radius:12px;
+    flex-shrink:0;
+  }
+  .site-info{flex:1; min-width:0;}
+  .site-info h3{font-size:19px; color:var(--paper);}
+  .site-info .where{font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--lantern); margin-bottom:2px;}
+  .site-info .prog{font-size:13px; color:var(--sand-dim); margin-top:3px;}
+  .site-done{color:var(--lantern-soft); font-size:22px;}
+  .journal-link{margin-top:18px; width:100%;}
+  .nav-row{display:flex; gap:10px; margin-top:18px;}
+  .nav-row .btn-ghost{flex:1;}
+  .quest-card{cursor:default;}
+  .quest-card:hover{border-color:#4a382a;}
+  .quest-card:active{transform:none;}
+  .quest-done{border-color:var(--lantern);}
+  .quest-done .site-emoji{background:rgba(232,163,61,0.22);}
+  .prog-done{color:var(--lantern-soft) !important; font-weight:700;}
+  .master-banner{
+    margin-top:16px;
+    background:linear-gradient(135deg, rgba(232,163,61,0.2), rgba(180,85,45,0.2));
+    border:1.5px solid var(--lantern);
+    border-radius:14px;
+    padding:16px;
+    text-align:center;
+    animation:fadeUp .5s ease both;
+  }
+  .master-banner .big{font-size:34px;}
+  .master-banner h3{color:var(--lantern-soft); font-size:20px; margin:4px 0 2px;}
+  .master-banner p{font-size:14px; color:var(--sand);}
+
+  /* ---------- dig screen ---------- */
+  .dig-head{margin-bottom:10px;}
+  .dig-head h2{font-size:26px; color:var(--paper);}
+  .dig-head p{font-size:14px; color:var(--sand-dim);}
+  .frag-tracker{
+    display:flex; gap:10px; flex-wrap:wrap;
+    margin:12px 0;
+  }
+  .frag-pill{
+    font-family:var(--font-mono);
+    font-size:12px;
+    background:var(--night-2);
+    border:1px solid #4a382a;
+    border-radius:999px;
+    padding:6px 12px;
+    color:var(--sand-dim);
+  }
+  .frag-pill.found-all{border-color:var(--lantern); color:var(--lantern-soft);}
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(5, 1fr);
+    gap:7px;
+    margin:8px 0 14px;
+  }
+  .tile{
+    aspect-ratio:1;
+    border-radius:9px;
+    border:none;
+    font-size:22px;
+    display:grid; place-items:center;
+    background:linear-gradient(160deg, var(--dirt-2), var(--dirt-1));
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,0.3), inset 0 2px 0 rgba(255,255,255,0.06);
+    transition:transform .08s ease, background .15s ease;
+    cursor:pointer;
+    position:relative;
+  }
+  .tile:active{transform:scale(0.93);}
+  .tile.depth1{background:linear-gradient(160deg, var(--dirt-3), var(--dirt-2));}
+  .tile.cleared{
+    background:linear-gradient(160deg, #3a2c1e, #2c2015);
+    box-shadow:inset 0 3px 6px rgba(0,0,0,0.5);
+    cursor:default;
+  }
+  .tile.fragment{
+    background:linear-gradient(160deg, var(--paper), var(--paper-edge));
+    box-shadow:inset 0 -3px 0 rgba(0,0,0,0.15);
+    cursor:default;
+    animation:pop .3s ease both;
+  }
+  .tile.shake{animation:shake .35s ease;}
+  @keyframes shake{
+    0%,100%{transform:translateX(0);}
+    25%{transform:translateX(-5px);}
+    50%{transform:translateX(5px);}
+    75%{transform:translateX(-3px);}
+  }
+  @keyframes pop{
+    0%{transform:scale(0.6);}
+    70%{transform:scale(1.1);}
+    100%{transform:scale(1);}
+  }
+  .tools{
+    display:flex; gap:10px;
+  }
+  .tool{
+    flex:1;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:13px;
+    font-size:16px; font-weight:700;
+    background:var(--night-2);
+    color:var(--sand);
+    border:2px solid #4a382a;
+    border-radius:12px;
+  }
+  .tool.active{
+    border-color:var(--lantern);
+    background:rgba(232,163,61,0.14);
+    color:var(--lantern-soft);
+  }
+  .dig-tip{
+    margin-top:12px;
+    font-size:14px;
+    color:var(--sand-dim);
+    background:var(--night-2);
+    border-left:3px solid var(--lantern);
+    border-radius:0 10px 10px 0;
+    padding:10px 12px;
+    min-height:44px;
+  }
+  .dig-tip b{color:var(--lantern-soft);}
+
+  /* ---------- modal (discovery / fact / quiz) ---------- */
+  .overlay{
+    position:fixed; inset:0;
+    background:rgba(15,10,6,0.78);
+    display:grid; place-items:center;
+    padding:16px;
+    z-index:50;
+    animation:fadeIn .25s ease both;
+  }
+  .card{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:16px;
+    padding:24px 20px;
+    width:100%;
+    max-width:440px;
+    max-height:88dvh;
+    overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,0.6);
+    position:relative;
+    animation:cardIn .35s cubic-bezier(.2,.9,.3,1.2) both;
+  }
+  .card .eyebrow{color:var(--clay);}
+  .card h3{font-size:26px; margin:4px 0 2px; color:var(--ink); font-weight:900;}
+  .card .catalog{font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; color:var(--ink-soft); text-transform:uppercase;}
+  .card .art{
+    font-size:64px; text-align:center; margin:14px 0;
+    filter:drop-shadow(0 4px 8px rgba(0,0,0,0.2));
+    animation:pop .45s ease both;
+  }
+  .fact{
+    font-size:16px;
+    background:rgba(180,85,45,0.08);
+    border:1px dashed var(--clay);
+    border-radius:10px;
+    padding:14px;
+    margin:10px 0 16px;
+  }
+  .fact .fact-label{
+    font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em;
+    text-transform:uppercase; color:var(--clay); display:block; margin-bottom:6px;
+  }
+  .quiz-q{font-weight:700; font-size:17px; margin-bottom:10px;}
+  .choices{display:flex; flex-direction:column; gap:8px; margin-bottom:6px;}
+  .choice{
+    text-align:left;
+    background:#fff8ea;
+    border:2px solid var(--paper-edge);
+    border-radius:10px;
+    padding:12px 14px;
+    font-size:15px;
+    color:var(--ink);
+    transition:border-color .12s ease, transform .08s ease;
+  }
+  .choice:active{transform:scale(0.985);}
+  .choice:hover{border-color:var(--clay);}
+  .choice.wrong{border-color:var(--stamp); background:#f6e0d6; animation:shake .35s ease;}
+  .quiz-note{font-size:13px; color:var(--ink-soft); min-height:20px;}
+  .card .actions{display:flex; gap:10px; margin-top:14px;}
+  .card .actions .btn-main{flex:1;}
+  .btn-paper-ghost{
+    background:transparent; color:var(--ink-soft);
+    border:1.5px solid var(--paper-edge);
+    padding:10px 16px; font-size:15px; font-weight:700;
+  }
+
+  /* stamp */
+  .stampwrap{position:relative;}
+  .stamp{
+    position:absolute;
+    top:-6px; right:2px;
+    font-family:var(--font-display);
+    font-weight:900;
+    font-size:20px;
+    letter-spacing:0.06em;
+    text-transform:uppercase;
+    color:var(--stamp);
+    border:3px solid var(--stamp);
+    border-radius:8px;
+    padding:4px 10px;
+    transform:rotate(-12deg) scale(3);
+    opacity:0;
+    pointer-events:none;
+    mix-blend-mode:multiply;
+  }
+  .stamp.slam{animation:slam .45s cubic-bezier(.3,1.4,.5,1) .15s both;}
+  @keyframes slam{
+    0%{transform:rotate(-12deg) scale(3); opacity:0;}
+    60%{transform:rotate(-12deg) scale(0.92); opacity:1;}
+    100%{transform:rotate(-12deg) scale(1); opacity:0.92;}
+  }
+
+  /* ---------- journal ---------- */
+  .journal{
+    background:var(--paper);
+    color:var(--ink);
+    border-radius:16px;
+    padding:22px 18px;
+    animation:fadeUp .4s ease both;
+  }
+  .journal h2{font-size:28px; font-weight:900;}
+  .journal .sub{font-family:var(--font-mono); font-size:12px; color:var(--ink-soft); letter-spacing:0.1em; text-transform:uppercase; margin-bottom:14px;}
+  .j-site{margin-bottom:18px;}
+  .j-site h3{
+    font-size:17px; color:var(--clay);
+    border-bottom:2px solid var(--paper-edge);
+    padding-bottom:4px; margin-bottom:8px;
+  }
+  .j-entry{
+    display:flex; gap:12px; align-items:flex-start;
+    padding:10px 0;
+    border-bottom:1px dashed var(--paper-edge);
+  }
+  .j-entry:last-child{border-bottom:none;}
+  .j-entry .em{font-size:28px; flex-shrink:0;}
+  .j-entry .nm{font-weight:700; font-size:15px;}
+  .j-entry .fx{font-size:13.5px; color:var(--ink-soft);}
+  .j-entry.locked{opacity:0.45;}
+  .j-entry.locked .nm{font-style:italic;}
+  .journal-count{
+    font-family:var(--font-mono);
+    font-size:13px;
+    text-align:center;
+    color:var(--ink-soft);
+    margin-top:8px;
+  }
+
+  @keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+  @keyframes fadeUp{from{opacity:0; transform:translateY(14px);} to{opacity:1; transform:none;}}
+  @keyframes cardIn{from{opacity:0; transform:translateY(26px) scale(0.96);} to{opacity:1; transform:none;}}
+
+  @media (prefers-reduced-motion: reduce){
+    *, *::before, *::after{animation-duration:0.01ms !important; transition-duration:0.01ms !important;}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+"use strict";
+
+/* =========================================================
+   DIG QUEST — every Field Fact below is a well-documented,
+   verifiable historical/archaeological fact. Sources include
+   museum records and mainstream archaeology scholarship.
+   ========================================================= */
+
+const SITES = [
+  {
+    id:"egypt",
+    name:"Valley of the Kings",
+    where:"Egypt",
+    emoji:"🏜️",
+    blurb:"A desert valley where pharaohs of ancient Egypt were buried for around 500 years.",
+    artifacts:[
+      {
+        id:"rosetta", emoji:"🪨", name:"The Rosetta Stone", cat:"EG-001",
+        fact:"The Rosetta Stone, found in Egypt in 1799, carries the same royal message written three ways: Egyptian hieroglyphs, Demotic script, and ancient Greek. Because scholars could already read the Greek, it became the key to decoding hieroglyphs — Jean-François Champollion cracked the code in 1822.",
+        q:{
+          prompt:"Why was the Rosetta Stone so important?",
+          choices:[
+            "It had the same text in three scripts, helping scholars decode hieroglyphs",
+            "It was the heaviest stone ever found in Egypt",
+            "It showed a map to a pharaoh's treasure"
+          ],
+          answer:0
+        }
+      },
+      {
+        id:"tutmask", emoji:"👑", name:"Golden Mask of Tutankhamun", cat:"EG-002",
+        fact:"In 1922, archaeologist Howard Carter discovered the tomb of the young pharaoh Tutankhamun in the Valley of the Kings. Inside lay a stunning funeral mask made of gold. The tomb was over 3,000 years old and one of the best-preserved royal tombs ever found in Egypt.",
+        q:{
+          prompt:"Who discovered Tutankhamun's tomb, and when?",
+          choices:[
+            "Jean-François Champollion, in 1822",
+            "Howard Carter, in 1922",
+            "A team of farmers, in 1974"
+          ],
+          answer:1
+        }
+      },
+      {
+        id:"papyrus", emoji:"📜", name:"Papyrus Scroll", cat:"EG-003",
+        fact:"Ancient Egyptians made a paper-like writing material called papyrus from the papyrus plant, which grows along the Nile River. They cut the plant's stem into strips, pressed the strips together, and dried them into smooth sheets — thousands of years before modern paper reached Egypt.",
+        q:{
+          prompt:"What was papyrus made from?",
+          choices:[
+            "Crushed desert sand and clay",
+            "Animal skins",
+            "A plant that grows along the Nile River"
+          ],
+          answer:2
+        }
+      }
+    ]
+  },
+  {
+    id:"pompeii",
+    name:"Pompeii",
+    where:"Italy",
+    emoji:"🌋",
+    blurb:"A Roman city frozen in time when Mount Vesuvius erupted in 79 CE.",
+    artifacts:[
+      {
+        id:"bread", emoji:"🍞", name:"Carbonized Loaf of Bread", cat:"PM-001",
+        fact:"When Mount Vesuvius erupted in 79 CE, it buried the Roman city of Pompeii in volcanic ash. The ash preserved everyday life in amazing detail — archaeologists have found blackened (carbonized) loaves of bread still sitting where bakers left them nearly 2,000 years ago.",
+        q:{
+          prompt:"What buried and preserved the city of Pompeii?",
+          choices:[
+            "A giant flood from the sea",
+            "Volcanic ash from Mount Vesuvius",
+            "A sandstorm from the desert"
+          ],
+          answer:1
+        }
+      },
+      {
+        id:"mosaic", emoji:"🐕", name:"'Beware of the Dog' Mosaic", cat:"PM-002",
+        fact:"Romans decorated floors with mosaics — pictures built from thousands of tiny pieces of colored stone or glass called tesserae. One famous Pompeii mosaic shows a chained guard dog with the Latin words 'CAVE CANEM,' which means 'Beware of the dog.'",
+        q:{
+          prompt:"What are the tiny pieces that make up a mosaic called?",
+          choices:[
+            "Tesserae",
+            "Pixels",
+            "Cave canem"
+          ],
+          answer:0
+        }
+      },
+      {
+        id:"coin", emoji:"🪙", name:"Roman Coin", cat:"PM-003",
+        fact:"Roman coins were stamped with the faces of emperors. Because historians know the years each emperor ruled, a coin can act like a date label: finding one helps archaeologists estimate the age of the layer of ground it was buried in.",
+        q:{
+          prompt:"Why are old coins so useful to archaeologists?",
+          choices:[
+            "They can be spent in museums",
+            "They are always made of pure gold",
+            "They help estimate the age of the layer where they're found"
+          ],
+          answer:2
+        }
+      }
+    ]
+  },
+  {
+    id:"xian",
+    name:"Xi'an",
+    where:"China",
+    emoji:"🏯",
+    blurb:"Home of China's first emperor — and an underground army of clay soldiers.",
+    artifacts:[
+      {
+        id:"soldier", emoji:"🗿", name:"Terracotta Soldier", cat:"XA-001",
+        fact:"In 1974, farmers digging a well near Xi'an, China discovered the Terracotta Army: thousands of life-size clay soldiers buried to guard the tomb of Qin Shi Huang, China's first emperor. The soldiers were sculpted with varied faces, hairstyles, and armor — no two are exactly alike.",
+        q:{
+          prompt:"How was the Terracotta Army discovered?",
+          choices:[
+            "By farmers digging a well in 1974",
+            "By a satellite photo from space",
+            "It was never lost — it was always on display"
+          ],
+          answer:0
+        }
+      },
+      {
+        id:"chariot", emoji:"🐎", name:"Bronze Chariot", cat:"XA-002",
+        fact:"Near the first emperor's tomb, archaeologists uncovered two remarkable bronze chariots, each pulled by four bronze horses. Built at about half of real size, each chariot was assembled from thousands of separate bronze parts — a masterpiece of ancient engineering.",
+        q:{
+          prompt:"What pulled each of the bronze chariots?",
+          choices:[
+            "Four bronze horses",
+            "Two clay oxen",
+            "A team of bronze soldiers"
+          ],
+          answer:0
+        }
+      },
+      {
+        id:"silk", emoji:"🧵", name:"Silk Fragment", cat:"XA-003",
+        fact:"Silk is made from the cocoons of silkworms, and ancient China guarded the secret of silk-making for centuries. Silk was so prized that the great trade routes connecting China with Central Asia and Europe became known as the Silk Road.",
+        q:{
+          prompt:"What is silk made from?",
+          choices:[
+            "Spider webs",
+            "The cocoons of silkworms",
+            "Very thin cotton"
+          ],
+          answer:1
+        }
+      }
+    ]
+  },
+  {
+    id:"tikal",
+    name:"Tikal",
+    where:"Guatemala",
+    emoji:"🌴",
+    blurb:"A great Maya city with towering stone pyramids rising out of the rainforest.",
+    artifacts:[
+      {
+        id:"glyphs", emoji:"📖", name:"Carved Glyph Panel", cat:"TK-001",
+        fact:"The Maya created one of the most complete writing systems of the ancient Americas, using hundreds of picture-symbols called glyphs. They carved glyphs into stone monuments and painted them in folding books made of bark paper, recording their history, rulers, and astronomy.",
+        q:{
+          prompt:"What are the Maya writing symbols called?",
+          choices:[
+            "Tesserae",
+            "Hieroglyph stamps",
+            "Glyphs"
+          ],
+          answer:2
+        }
+      },
+      {
+        id:"cacao", emoji:"🍫", name:"Cacao Drinking Pot", cat:"TK-002",
+        fact:"The Maya treasured cacao — the beans that chocolate is made from. They ground the beans into a bitter, frothy drink enjoyed by nobles and used in ceremonies. Scientists have confirmed this by finding traces of cacao inside ancient Maya pots.",
+        q:{
+          prompt:"How do we know the Maya really drank cacao?",
+          choices:[
+            "Traces of cacao were found inside ancient Maya pots",
+            "A chocolate bar was found in a pyramid",
+            "It's just a legend — there's no evidence"
+          ],
+          answer:0
+        }
+      },
+      {
+        id:"zero", emoji:"🐚", name:"The Zero Glyph", cat:"TK-003",
+        fact:"The Maya were among the first people in the world to use a written symbol for zero. Their number system used dots for ones, bars for fives, and a shell-shaped symbol for zero — and it helped them build remarkably accurate calendars.",
+        q:{
+          prompt:"What shape did the Maya use for zero?",
+          choices:[
+            "A star",
+            "A shell",
+            "A jaguar paw"
+          ],
+          answer:1
+        }
+      }
+    ]
+  },
+  {
+    id:"antikythera",
+    name:"Antikythera Shipwreck",
+    where:"Greece · underwater dig",
+    emoji:"🌊",
+    blurb:"A ship that sank about 2,000 years ago, found on the seabed by sponge divers.",
+    artifacts:[
+      {
+        id:"mechanism", emoji:"⚙️", name:"The Antikythera Mechanism", cat:"AK-001",
+        fact:"In 1900, Greek sponge divers found an ancient shipwreck near the island of Antikythera. Among the treasures was a corroded lump of bronze that turned out to be a machine with dozens of interlocking gears. Built about 2,000 years ago, it tracked the movements of the sun and moon and could predict eclipses — it's often called the world's oldest known analog computer.",
+        q:{
+          prompt:"What could the Antikythera mechanism do?",
+          choices:[
+            "Play music for the ship's crew",
+            "Track the sun and moon and predict eclipses",
+            "Steer the ship automatically"
+          ],
+          answer:1
+        }
+      },
+      {
+        id:"amphora", emoji:"🏺", name:"Amphora", cat:"AK-002",
+        fact:"Ancient Greeks shipped goods like olive oil and wine across the sea in tall, two-handled clay jars called amphorae. Sunken ships are often found with their cargo of amphorae still stacked in place — and by studying where the jars were made, archaeologists can map out ancient trade routes.",
+        q:{
+          prompt:"What did ancient Greeks usually carry in amphorae?",
+          choices:[
+            "Olive oil and wine",
+            "Gold coins",
+            "Drinking water for the crew"
+          ],
+          answer:0
+        }
+      },
+      {
+        id:"bronzeyouth", emoji:"🗽", name:"Bronze Statue of a Youth", cat:"AK-003",
+        fact:"Divers also raised a beautiful, larger-than-life bronze statue of a young man from the wreck. Ancient bronze statues are extremely rare today, because over the centuries most were melted down so the metal could be reused. Many of the finest survivors were protected only because they sank to the bottom of the sea.",
+        q:{
+          prompt:"Why are ancient bronze statues so rare today?",
+          choices:[
+            "Bronze dissolves in rain",
+            "The Greeks only ever made a few",
+            "Most were melted down so the metal could be reused"
+          ],
+          answer:2
+        }
+      }
+    ]
+  }
+];
+
+const GRID_COLS = 5, GRID_ROWS = 6;
+const FRAGS_PER_ARTIFACT = 3;
+
+/* =========================================================
+   QUESTS — missions built from certified finds. The quests
+   are framing for the adventure; the facts stay 100% real.
+   ========================================================= */
+const QUESTS = [
+  { id:"first",   emoji:"🎖️", name:"First Find",
+    desc:"Certify your very first artifact.",
+    kind:"count", target:1 },
+  { id:"writing", emoji:"✍️", name:"The Written Word",
+    desc:"Recover writing from three different civilizations.",
+    kind:"ids", ids:["rosetta","papyrus","glyphs"] },
+  { id:"menu",    emoji:"🍽️", name:"The Ancient Menu",
+    desc:"Find three things ancient people ate or drank.",
+    kind:"ids", ids:["bread","cacao","amphora"] },
+  { id:"beasts",  emoji:"🐾", name:"Animal Kingdom",
+    desc:"Find three artifacts made possible by animals.",
+    kind:"ids", ids:["mosaic","chariot","silk"] },
+  { id:"clever",  emoji:"🧮", name:"Math & Machines",
+    desc:"Recover proof of brilliant ancient inventors.",
+    kind:"ids", ids:["zero","mechanism"] },
+  { id:"leader",  emoji:"🚩", name:"Site Leader",
+    desc:"Certify every find at any one dig site.",
+    kind:"site" },
+  { id:"master",  emoji:"🏆", name:"Master Archaeologist",
+    desc:"Certify every artifact in the world.",
+    kind:"all" }
+];
+
+function questProgress(q){
+  if(q.kind==="count") return { done: Math.min(totalFound(), q.target), total: q.target };
+  if(q.kind==="ids")   return { done: q.ids.filter(id=>state.found[id]).length, total: q.ids.length };
+  if(q.kind==="site"){
+    const best = Math.max(...SITES.map(s=>foundCount(s)===s.artifacts.length ? s.artifacts.length : 0), 0);
+    const cap = Math.max(...SITES.map(s=>s.artifacts.length));
+    return best>0 ? { done:1, total:1 } : { done: Math.min(Math.max(...SITES.map(foundCount)), cap-1), total: cap, showAs:"site" };
+  }
+  return { done: totalFound(), total: totalArtifacts() };
+}
+function questDone(q){ const p=questProgress(q); return p.done>=p.total; }
+
+
+/* ---------------- state ---------------- */
+const state = {
+  screen:"title",            // title | map | dig | journal | quests
+  found:{},                  // artifactId -> true (certified)
+  celebrated:{},             // questId -> true (badge ceremony already shown)
+  siteId:null,
+  dig:null,                  // { tiles:[], targets:{artifactId:[tileIdx]}, revealed:{artifactId:count} }
+  tool:"brush",
+  tip:null,
+  shownBrushLesson:false,
+  journalBack:"map"
+};
+
+/* ---------------- saving (works when hosted, e.g. GitHub Pages) ---------------- */
+const SAVE_KEY = "digquest-save-v1";
+function saveProgress(){
+  try{
+    localStorage.setItem(SAVE_KEY, JSON.stringify({
+      found: state.found,
+      celebrated: state.celebrated,
+      shownBrushLesson: state.shownBrushLesson
+    }));
+  }catch(e){ /* storage unavailable — play continues, just without saving */ }
+}
+function loadProgress(){
+  try{
+    const raw = localStorage.getItem(SAVE_KEY);
+    if(!raw) return;
+    const data = JSON.parse(raw);
+    if(data && typeof data.found === "object" && data.found !== null){
+      // only accept known artifact ids — keeps the save honest
+      const validIds = new Set(SITES.flatMap(s=>s.artifacts.map(a=>a.id)));
+      for(const id of Object.keys(data.found)){
+        if(validIds.has(id) && data.found[id] === true) state.found[id] = true;
+      }
+      if(data.celebrated && typeof data.celebrated === "object"){
+        const validQ = new Set(QUESTS.map(q=>q.id));
+        for(const id of Object.keys(data.celebrated)){
+          if(validQ.has(id) && data.celebrated[id] === true) state.celebrated[id] = true;
+        }
+      }
+      state.shownBrushLesson = !!data.shownBrushLesson;
+    }
+  }catch(e){ /* corrupted or unavailable — start fresh */ }
+  // any quest already complete gets marked quietly, so reopening
+  // the game never triggers a pile of old badge ceremonies
+  QUESTS.forEach(q=>{ if(questDone(q)) state.celebrated[q.id] = true; });
+}
+function resetProgress(){
+  try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
+  state.found = {};
+  state.celebrated = {};
+  state.shownBrushLesson = false;
+  state.screen = "map";
+  render();
+}
+
+function foundCount(site){ return site.artifacts.filter(a=>state.found[a.id]).length; }
+function totalFound(){ return SITES.reduce((n,s)=>n+foundCount(s),0); }
+function totalArtifacts(){ return SITES.reduce((n,s)=>n+s.artifacts.length,0); }
+
+/* ---------------- dig setup ---------------- */
+function startDig(siteId){
+  const site = SITES.find(s=>s.id===siteId);
+  const remaining = site.artifacts.filter(a=>!state.found[a.id]);
+  const total = GRID_COLS*GRID_ROWS;
+  const tiles = [];
+  for(let i=0;i<total;i++) tiles.push({depth:2, artifact:null, revealed:false});
+
+  // scatter fragments for artifacts not yet certified
+  const idxs = shuffle([...Array(total).keys()]);
+  const targets = {}, revealed = {};
+  let cursor = 0;
+  remaining.forEach(a=>{
+    targets[a.id] = [];
+    revealed[a.id] = 0;
+    for(let f=0; f<FRAGS_PER_ARTIFACT; f++){
+      const t = idxs[cursor++];
+      tiles[t].artifact = a.id;
+      targets[a.id].push(t);
+    }
+  });
+
+  state.siteId = siteId;
+  state.dig = { tiles, targets, revealed };
+  state.tool = "brush";
+  state.tip = remaining.length
+    ? "Tap a square to start digging. Fragile finds need the <b>brush</b>!"
+    : "You've certified every find here. Visit another site!";
+  state.screen = "dig";
+  render();
+}
+
+function shuffle(arr){
+  for(let i=arr.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [arr[i],arr[j]]=[arr[j],arr[i]];
+  }
+  return arr;
+}
+
+/* ---------------- dig actions ---------------- */
+function digTile(idx, el){
+  if(modal) return; // no digging while a discovery card is open
+  const d = state.dig;
+  const t = d.tiles[idx];
+  if(t.revealed || t.depth===0) return;
+
+  if(t.artifact){
+    if(state.tool==="shovel"){
+      // real archaeology: delicate finds need delicate tools
+      el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
+      setTip("Careful — something fragile is under there! Real archaeologists switch to a <b>brush</b> near delicate finds.");
+      return;
+    }
+    t.depth--;
+    if(t.depth===0){
+      t.revealed = true;
+      d.revealed[t.artifact]++;
+      const site = SITES.find(s=>s.id===state.siteId);
+      const art = site.artifacts.find(a=>a.id===t.artifact);
+      const got = d.revealed[t.artifact];
+      if(got < FRAGS_PER_ARTIFACT){
+        setTip(`A fragment! <b>${got} of ${FRAGS_PER_ARTIFACT}</b> pieces of something... keep brushing.`);
+        render();
+      }else{
+        render();
+        setTimeout(()=>openDiscovery(art), 350);
+      }
+    }else{
+      render();
+    }
+  }else{
+    // empty ground
+    if(state.tool==="brush"){
+      t.depth--; // brush works, just normal pace
+    }else{
+      t.depth = 0; // shovel clears empty ground fast
+    }
+    if(t.depth===0) setTipMaybe();
+    render();
+  }
+}
+
+let tipTimer = null;
+function setTip(html){
+  state.tip = html;
+  const el = document.getElementById("digtip");
+  if(el) el.innerHTML = html;
+}
+function setTipMaybe(){
+  if(!state.shownBrushLesson){
+    state.shownBrushLesson = true;
+    saveProgress();
+    setTip("Tip: the <b>shovel</b> clears empty ground fast, but fragile finds only respond to the <b>brush</b> — just like a real dig.");
+  }
+}
+
+/* ---------------- discovery + quiz ---------------- */
+let modal = null; // {art, phase:"fact"|"quiz"|"certified"} or {quest}
+const discoveryQueue = [];
+const questQueue = [];
+
+function openDiscovery(art){
+  if(modal){ discoveryQueue.push(art); return; }
+  modal = { art, phase:"fact", wrongPicks:new Set() };
+  render();
+}
+
+function closeModal(){
+  modal = null;
+  if(discoveryQueue.length){ openDiscovery(discoveryQueue.shift()); return; }
+  if(questQueue.length){ modal = { quest: questQueue.shift() }; render(); return; }
+  // refresh tip for remaining work at this site
+  const site = SITES.find(s=>s.id===state.siteId);
+  const remaining = site ? site.artifacts.filter(a=>!state.found[a.id]).length : 0;
+  state.tip = remaining
+    ? "Back to the trench — more fragments are still buried here."
+    : "Site complete! Head back to the map to choose your next expedition.";
+  render();
+}
+
+function toQuiz(){
+  modal.phase = "quiz";
+  render();
+}
+
+function pickChoice(i, btn){
+  const art = modal.art;
+  if(i === art.q.answer){
+    state.found[art.id] = true;
+    // did that certification complete any quests?
+    QUESTS.forEach(q=>{
+      if(!state.celebrated[q.id] && questDone(q)){
+        state.celebrated[q.id] = true;
+        questQueue.push(q);
+      }
+    });
+    saveProgress();
+    modal.phase = "certified";
+    render();
+  }else{
+    modal.wrongPicks.add(i);
+    btn.classList.add("wrong");
+    const note = document.getElementById("quiznote");
+    if(note) note.textContent = "Not quite — take another look at the Field Fact above, then try again.";
+  }
+}
+
+/* ---------------- rendering ---------------- */
+function h(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content; }
+function esc(s){ return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+function render(){
+  const app = document.getElementById("app");
+  app.innerHTML = "";
+  if(state.screen==="title") app.append(renderTitle());
+  else if(state.screen==="map") app.append(renderMap());
+  else if(state.screen==="dig") app.append(renderDig());
+  else if(state.screen==="journal") app.append(renderJournal());
+  else if(state.screen==="quests") app.append(renderQuests());
+  if(modal) app.append(modal.quest ? renderQuestModal() : renderModal());
+}
+
+function renderTitle(){
+  const hasSave = totalFound() > 0;
+  const frag = h(`
+    <div class="screen-title">
+      <div class="title-emblem">⛏️</div>
+      <h1>DIG<span class="accent">·</span>QUEST</h1>
+      <p class="tagline">You're the archaeologist. Travel to real dig sites, uncover real artifacts, and earn your place in the Field Journal.</p>
+      <p class="promise">Field promise: every fact in this game is <b>real and verifiable</b>. No made-up history. Ever.</p>
+      <div><button class="btn-main" id="start">${hasSave ? "Continue expedition ("+totalFound()+"/"+totalArtifacts()+" finds)" : "Start the expedition"}</button></div>
+    </div>
+  `);
+  frag.getElementById("start").onclick = ()=>{ state.screen="map"; render(); };
+  return frag;
+}
+
+function renderMap(){
+  const done = totalFound(), total = totalArtifacts();
+  const frag = h(`
+    <div>
+      <div class="topbar">
+        <span class="title">⛏️ Dig Quest</span>
+        <span class="eyebrow">${done}/${total} certified</span>
+      </div>
+      <div class="map-head">
+        <h2>Choose a dig site</h2>
+        <p>Four real places. Twelve real finds. Where to first?</p>
+      </div>
+      <div class="sites" id="sites"></div>
+      ${done===total ? `
+        <div class="master-banner">
+          <div class="big">🏆</div>
+          <h3>Master Archaeologist</h3>
+          <p>You certified every artifact — and every fact you learned along the way is true.</p>
+        </div>` : ``}
+      <div class="nav-row">
+        <button class="btn-ghost" id="quests">🗺️ Quest Board (${QUESTS.filter(questDone).length}/${QUESTS.length})</button>
+        <button class="btn-ghost" id="journal">📓 Field Journal</button>
+      </div>
+    </div>
+  `);
+  const wrap = frag.getElementById("sites");
+  SITES.forEach(site=>{
+    const n = foundCount(site), t = site.artifacts.length;
+    const card = h(`
+      <button class="site-card">
+        <span class="site-emoji">${site.emoji}</span>
+        <span class="site-info">
+          <span class="where">${esc(site.where)}</span>
+          <h3>${esc(site.name)}</h3>
+          <span class="prog">${esc(site.blurb)}</span>
+          <span class="prog">Finds certified: ${n} / ${t}</span>
+        </span>
+        ${n===t ? `<span class="site-done">✔</span>`:""}
+      </button>
+    `).firstElementChild;
+    card.onclick = ()=>startDig(site.id);
+    wrap.append(card);
+  });
+  frag.getElementById("journal").onclick = ()=>{ state.journalBack="map"; state.screen="journal"; render(); };
+  frag.getElementById("quests").onclick = ()=>{ state.journalBack="map"; state.screen="quests"; render(); };
+  return frag;
+}
+
+function renderQuests(){
+  const frag = h(`
+    <div>
+      <div class="topbar">
+        <button class="btn-ghost" id="back">← Back</button>
+        <span class="eyebrow">${QUESTS.filter(questDone).length}/${QUESTS.length} complete</span>
+      </div>
+      <div class="map-head">
+        <h2>🗺️ Quest Board</h2>
+        <p>Missions for a working archaeologist. Certify finds to complete them.</p>
+      </div>
+      <div class="sites" id="qlist"></div>
+    </div>
+  `);
+  const wrap = frag.getElementById("qlist");
+  QUESTS.forEach(q=>{
+    const p = questProgress(q);
+    const done = p.done>=p.total;
+    let progText;
+    if(done) progText = "Complete!";
+    else if(q.kind==="site") progText = "Best site so far: " + Math.max(...SITES.map(foundCount)) + " finds certified";
+    else progText = `Progress: ${p.done} / ${p.total}`;
+    wrap.append(h(`
+      <div class="site-card quest-card ${done?"quest-done":""}">
+        <span class="site-emoji">${q.emoji}</span>
+        <span class="site-info">
+          <h3>${esc(q.name)}</h3>
+          <span class="prog">${esc(q.desc)}</span>
+          <span class="prog ${done?"prog-done":""}">${esc(progText)}</span>
+        </span>
+        ${done?`<span class="site-done">✔</span>`:""}
+      </div>`));
+  });
+  frag.getElementById("back").onclick = ()=>{ state.screen="map"; render(); };
+  return frag;
+}
+
+function renderQuestModal(){
+  const q = modal.quest;
+  const frag = h(`
+    <div class="overlay"><div class="card">
+      <div class="stampwrap">
+        <span class="eyebrow">Quest complete</span>
+        <h3>${esc(q.name)}</h3>
+        <div class="art">${q.emoji}</div>
+        <span class="stamp slam">Quest Done</span>
+      </div>
+      <div class="fact"><span class="fact-label">Mission accomplished</span>${esc(q.desc)} You earned the ${q.emoji} ${esc(q.name)} badge — see it on the Quest Board.</div>
+      <div class="actions">
+        <button class="btn-main" id="close">Onward!</button>
+      </div>
+    </div></div>
+  `);
+  frag.getElementById("close").onclick = closeModal;
+  return frag;
+}
+
+function renderDig(){
+  const site = SITES.find(s=>s.id===state.siteId);
+  const d = state.dig;
+  const frag = h(`
+    <div>
+      <div class="topbar">
+        <button class="btn-ghost" id="back">← Map</button>
+        <button class="btn-ghost" id="journal">📓 Journal</button>
+      </div>
+      <div class="dig-head">
+        <h2>${site.emoji} ${esc(site.name)}</h2>
+        <p>${esc(site.where)} · Excavation Trench A</p>
+      </div>
+      <div class="frag-tracker" id="tracker"></div>
+      <div class="grid" id="grid"></div>
+      <div class="tools">
+        <button class="tool ${state.tool==="brush"?"active":""}" id="toolBrush">🖌️ Brush</button>
+        <button class="tool ${state.tool==="shovel"?"active":""}" id="toolShovel">⛏️ Shovel</button>
+      </div>
+      <div class="dig-tip" id="digtip">${state.tip||""}</div>
+    </div>
+  `);
+
+  const tracker = frag.getElementById("tracker");
+  site.artifacts.forEach(a=>{
+    if(state.found[a.id]){
+      tracker.append(h(`<span class="frag-pill found-all">${a.emoji} certified ✔</span>`));
+    }else{
+      const got = d.revealed[a.id]||0;
+      tracker.append(h(`<span class="frag-pill ${got===FRAGS_PER_ARTIFACT?"found-all":""}">🧩 ${got}/${FRAGS_PER_ARTIFACT}</span>`));
+    }
+  });
+
+  const grid = frag.getElementById("grid");
+  d.tiles.forEach((t,i)=>{
+    let cls="tile", label="";
+    if(t.revealed){ cls+=" fragment"; label="🧩"; }
+    else if(t.depth===0){ cls+=" cleared"; }
+    else if(t.depth===1){ cls+=" depth1"; }
+    const el = h(`<button class="${cls}" aria-label="dig square ${i+1}">${label}</button>`).firstElementChild;
+    el.onclick = ()=>digTile(i, el);
+    grid.append(el);
+  });
+
+  frag.getElementById("back").onclick = ()=>{ state.screen="map"; render(); };
+  frag.getElementById("journal").onclick = ()=>{ state.journalBack="dig"; state.screen="journal"; render(); };
+  frag.getElementById("toolBrush").onclick = ()=>{ state.tool="brush"; render(); };
+  frag.getElementById("toolShovel").onclick = ()=>{ state.tool="shovel"; render(); };
+  return frag;
+}
+
+function renderModal(){
+  const art = modal.art;
+  let inner = "";
+  if(modal.phase==="fact"){
+    inner = `
+      <span class="eyebrow">Discovery!</span>
+      <h3>${esc(art.name)}</h3>
+      <div class="catalog">Catalog № ${art.cat}</div>
+      <div class="art">${art.emoji}</div>
+      <div class="fact"><span class="fact-label">Field Fact — verified</span>${esc(art.fact)}</div>
+      <div class="actions">
+        <button class="btn-main" id="next">I read it — quiz me!</button>
+      </div>
+    `;
+  }else if(modal.phase==="quiz"){
+    inner = `
+      <span class="eyebrow">Field Certification</span>
+      <h3>${esc(art.name)}</h3>
+      <div class="art">${art.emoji}</div>
+      <div class="fact"><span class="fact-label">Field Fact — verified</span>${esc(art.fact)}</div>
+      <p class="quiz-q">${esc(art.q.prompt)}</p>
+      <div class="choices" id="choices"></div>
+      <p class="quiz-note" id="quiznote"></p>
+    `;
+  }else{
+    inner = `
+      <div class="stampwrap">
+        <span class="eyebrow">Entry added to Field Journal</span>
+        <h3>${esc(art.name)}</h3>
+        <div class="catalog">Catalog № ${art.cat}</div>
+        <div class="art">${art.emoji}</div>
+        <span class="stamp slam">Certified Find</span>
+      </div>
+      <div class="fact"><span class="fact-label">You learned a true thing</span>${esc(art.fact)}</div>
+      <div class="actions">
+        <button class="btn-main" id="close">Keep digging</button>
+      </div>
+    `;
+  }
+  const frag = h(`<div class="overlay"><div class="card">${inner}</div></div>`);
+  if(modal.phase==="fact"){
+    frag.getElementById("next").onclick = toQuiz;
+  }else if(modal.phase==="quiz"){
+    const wrap = frag.getElementById("choices");
+    art.q.choices.forEach((c,i)=>{
+      const b = h(`<button class="choice ${modal.wrongPicks.has(i)?"wrong":""}">${esc(c)}</button>`).firstElementChild;
+      b.onclick = ()=>pickChoice(i,b);
+      wrap.append(b);
+    });
+  }else{
+    frag.getElementById("close").onclick = closeModal;
+  }
+  return frag;
+}
+
+function renderJournal(){
+  const frag = h(`
+    <div>
+      <div class="topbar">
+        <button class="btn-ghost" id="back">← Back</button>
+        <span class="eyebrow">Field Journal</span>
+      </div>
+      <div class="journal">
+        <h2>📓 Field Journal</h2>
+        <p class="sub">Certified finds & the true facts behind them</p>
+        <div id="entries"></div>
+        <p class="journal-count">${totalFound()} of ${totalArtifacts()} artifacts certified</p>
+      </div>
+      <button class="btn-ghost journal-link" id="reset">Start a brand-new expedition</button>
+    </div>
+  `);
+  const resetBtn = frag.getElementById("reset");
+  resetBtn.onclick = ()=>{
+    if(resetBtn.dataset.armed){
+      resetProgress();
+    }else{
+      resetBtn.dataset.armed = "1";
+      resetBtn.textContent = "Really erase the whole journal? Tap again to confirm";
+      setTimeout(()=>{ if(document.body.contains(resetBtn)){ delete resetBtn.dataset.armed; resetBtn.textContent = "Start a brand-new expedition"; } }, 4000);
+    }
+  };
+  const wrap = frag.getElementById("entries");
+  SITES.forEach(site=>{
+    const sec = h(`<div class="j-site"><h3>${site.emoji} ${esc(site.name)}, ${esc(site.where)}</h3></div>`).firstElementChild;
+    site.artifacts.forEach(a=>{
+      if(state.found[a.id]){
+        sec.append(h(`
+          <div class="j-entry">
+            <span class="em">${a.emoji}</span>
+            <span>
+              <span class="nm">${esc(a.name)} · <span style="font-family:var(--font-mono); font-size:11px;">${a.cat}</span></span><br>
+              <span class="fx">${esc(a.fact)}</span>
+            </span>
+          </div>`));
+      }else{
+        sec.append(h(`
+          <div class="j-entry locked">
+            <span class="em">❔</span>
+            <span><span class="nm">Undiscovered find</span><br>
+            <span class="fx">Keep excavating at ${esc(site.name)}...</span></span>
+          </div>`));
+      }
+    });
+    wrap.append(sec);
+  });
+  frag.getElementById("back").onclick = ()=>{ state.screen = state.journalBack||"map"; render(); };
+  return frag;
+}
+
+loadProgress();
+render();
+</script>
+</body>
+</html>
