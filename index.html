@@ -256,15 +256,20 @@
   }
   .dig-tip{
     margin-top:12px;
-    font-size:14px;
-    color:var(--sand-dim);
+    font-size:14.5px;
+    color:var(--sand);
     background:var(--night-2);
     border-left:3px solid var(--lantern);
     border-radius:0 10px 10px 0;
-    padding:10px 12px;
+    padding:11px 13px;
     min-height:44px;
   }
   .dig-tip b{color:var(--lantern-soft);}
+  .dig-tip.flash{animation:tipflash .7s ease;}
+  @keyframes tipflash{
+    0%{background:rgba(232,163,61,0.32); transform:translateX(3px);}
+    100%{background:var(--night-2); transform:none;}
+  }
 
   /* ---------- modal (discovery / fact / quiz) ---------- */
   .overlay{
@@ -788,8 +793,8 @@ function startDig(siteId){
   state.dig = { tiles, targets, revealed };
   state.tool = "brush";
   state.tip = remaining.length
-    ? "Tap a square to start digging. Fragile finds need the <b>brush</b>!"
-    : "You've certified every find here. Visit another site!";
+    ? `Tap squares to dig. <b>${remaining.length * FRAGS_PER_ARTIFACT} fragments</b> are buried here — each artifact takes <b>${FRAGS_PER_ARTIFACT} pieces</b>, hidden in different squares. Fragile finds need the <b>🖌️ brush</b>.`
+    : "You've certified every find here. Head back to the map and visit another site!";
   state.screen = "dig";
   render();
 }
@@ -803,17 +808,38 @@ function shuffle(arr){
 }
 
 /* ---------------- dig actions ---------------- */
+
+// how many fragment squares are still buried in this trench?
+function fragmentsLeft(){
+  return state.dig.tiles.filter(t=>t.artifact && !t.revealed).length;
+}
+
 function digTile(idx, el){
   if(modal) return; // no digging while a discovery card is open
   const d = state.dig;
   const t = d.tiles[idx];
-  if(t.revealed || t.depth===0) return;
+
+  // Already-recovered fragment: say what's still missing instead of going silent
+  if(t.revealed){
+    const got = d.revealed[t.artifact];
+    const left = FRAGS_PER_ARTIFACT - got;
+    setTip(left > 0
+      ? `You already recovered this piece. <b>${left} more piece${left>1?"s":""}</b> of this artifact ${left>1?"are":"is"} buried in <b>other squares</b> — keep digging!`
+      : `This piece is safely recovered.`);
+    return;
+  }
+
+  // Already-cleared empty square
+  if(t.depth===0){
+    setTip(`Nothing was buried here. <b>${fragmentsLeft()} fragment${fragmentsLeft()===1?"":"s"}</b> still hidden in this trench — try a square that still has dirt.`);
+    return;
+  }
 
   if(t.artifact){
     if(state.tool==="shovel"){
       // real archaeology: delicate finds need delicate tools
       el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake");
-      setTip("Careful — something fragile is under there! Real archaeologists switch to a <b>brush</b> near delicate finds.");
+      setTip("⚠️ Careful — something <b>fragile</b> is buried here! A shovel could break it. Tap <b>🖌️ Brush</b> below, then tap this square again.");
       return;
     }
     t.depth--;
@@ -824,38 +850,38 @@ function digTile(idx, el){
       const art = site.artifacts.find(a=>a.id===t.artifact);
       const got = d.revealed[t.artifact];
       if(got < FRAGS_PER_ARTIFACT){
-        setTip(`A fragment! <b>${got} of ${FRAGS_PER_ARTIFACT}</b> pieces of something... keep brushing.`);
+        const left = FRAGS_PER_ARTIFACT - got;
+        setTip(`🧩 A fragment! That's <b>${got} of ${FRAGS_PER_ARTIFACT}</b> pieces. The other ${left} ${left>1?"pieces are":"piece is"} in <b>other squares</b> — keep digging to finish it.`);
         render();
       }else{
         render();
         setTimeout(()=>openDiscovery(art), 350);
       }
     }else{
+      setTip("Something's under here — <b>brush again</b> on this same square to lift it out.");
       render();
     }
   }else{
     // empty ground
     if(state.tool==="brush"){
       t.depth--; // brush works, just normal pace
+      setTip(t.depth===0
+        ? `Just dirt here. <b>${fragmentsLeft()} fragment${fragmentsLeft()===1?"":"s"}</b> still buried — try another square.`
+        : "Brushing... tap this square again to finish clearing it.");
     }else{
       t.depth = 0; // shovel clears empty ground fast
+      setTip(`Cleared! Nothing buried there. <b>${fragmentsLeft()} fragment${fragmentsLeft()===1?"":"s"}</b> still hidden in this trench.`);
     }
-    if(t.depth===0) setTipMaybe();
     render();
   }
 }
 
-let tipTimer = null;
 function setTip(html){
   state.tip = html;
   const el = document.getElementById("digtip");
-  if(el) el.innerHTML = html;
-}
-function setTipMaybe(){
-  if(!state.shownBrushLesson){
-    state.shownBrushLesson = true;
-    saveProgress();
-    setTip("Tip: the <b>shovel</b> clears empty ground fast, but fragile finds only respond to the <b>brush</b> — just like a real dig.");
+  if(el){
+    el.innerHTML = html;
+    el.classList.remove("flash"); void el.offsetWidth; el.classList.add("flash");
   }
 }
 
@@ -1064,17 +1090,19 @@ function renderDig(){
         <button class="tool ${state.tool==="brush"?"active":""}" id="toolBrush">🖌️ Brush</button>
         <button class="tool ${state.tool==="shovel"?"active":""}" id="toolShovel">⛏️ Shovel</button>
       </div>
-      <div class="dig-tip" id="digtip">${state.tip||""}</div>
+      <div class="dig-tip flash" id="digtip">${state.tip||""}</div>
     </div>
   `);
 
   const tracker = frag.getElementById("tracker");
+  let n = 0;
   site.artifacts.forEach(a=>{
+    n++;
     if(state.found[a.id]){
-      tracker.append(h(`<span class="frag-pill found-all">${a.emoji} certified ✔</span>`));
+      tracker.append(h(`<span class="frag-pill found-all">${a.emoji} ${esc(a.name)} ✔</span>`));
     }else{
       const got = d.revealed[a.id]||0;
-      tracker.append(h(`<span class="frag-pill ${got===FRAGS_PER_ARTIFACT?"found-all":""}">🧩 ${got}/${FRAGS_PER_ARTIFACT}</span>`));
+      tracker.append(h(`<span class="frag-pill ${got===FRAGS_PER_ARTIFACT?"found-all":""}">Buried find ${n}: 🧩 ${got}/${FRAGS_PER_ARTIFACT} pieces</span>`));
     }
   });
 
@@ -1091,8 +1119,16 @@ function renderDig(){
 
   frag.getElementById("back").onclick = ()=>{ state.screen="map"; render(); };
   frag.getElementById("journal").onclick = ()=>{ state.journalBack="dig"; state.screen="journal"; render(); };
-  frag.getElementById("toolBrush").onclick = ()=>{ state.tool="brush"; render(); };
-  frag.getElementById("toolShovel").onclick = ()=>{ state.tool="shovel"; render(); };
+  frag.getElementById("toolBrush").onclick = ()=>{
+    state.tool="brush";
+    state.tip = "🖌️ <b>Brush ready.</b> Slower on plain dirt, but it's the only tool that can lift a fragile find. Tap a square twice to clear it.";
+    render();
+  };
+  frag.getElementById("toolShovel").onclick = ()=>{
+    state.tool="shovel";
+    state.tip = "⛏️ <b>Shovel ready.</b> Clears empty dirt in one tap — great for searching fast. It won't touch fragile finds.";
+    render();
+  };
   return frag;
 }
 
