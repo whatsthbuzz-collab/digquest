@@ -47,8 +47,7 @@
   html,body{height:100%;}
   body{
     background:
-      radial-gradient(900px 520px at 50% -8%, rgba(255,176,46,0.20), transparent 62%),
-      radial-gradient(700px 500px at 88% 12%, rgba(61,218,215,0.09), transparent 60%),
+      radial-gradient(900px 420px at 50% -8%, rgba(255,176,46,0.16), transparent 62%),
       var(--void);
     background-attachment:fixed;
     color:var(--sand);
@@ -182,7 +181,7 @@
     animation:fadeUp .45s var(--spring) both;
   }
   .map-wrap svg{display:block; width:100%; height:auto;}
-  .map-land{fill:#4d3d66; stroke:#8b6cb5; stroke-width:1.4;}
+  .map-land{fill:#5d4a82; stroke:#a184d1; stroke-width:1.5;}
   .map-grid{stroke:rgba(255,255,255,.07); stroke-width:1;}
   .map-label{
     font-family:var(--mono); font-size:19px; font-weight:600;
@@ -547,6 +546,7 @@
 <body>
 <div id="app"></div>
 <div id="fx"></div>
+<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v8</div>
 
 <script>
 "use strict";
@@ -1004,6 +1004,102 @@ function scoutSVG(pose){
 const GRID_COLS = 5, GRID_ROWS = 5;
 const FRAGS_PER_ARTIFACT = 3;
 const FRAG_COLORS = ["#ffc233", "#3ddad7", "#ff6ba8"];
+
+/* Extra quiz questions — every answer is stated verbatim in that artifact's
+   already-verified Field Fact. No new claims are introduced here. */
+const EXTRA_QS = {
+  rosetta:[
+    { prompt:"Which three kinds of writing appear on the Rosetta Stone?",
+      choices:["English, Latin, and Greek","Egyptian hieroglyphs, Demotic script, and ancient Greek","Hieroglyphs, French, and Latin"], answer:1 },
+    { prompt:"Who cracked the hieroglyph code in 1822?",
+      choices:["Jean-François Champollion","Howard Carter","A team of sponge divers"], answer:0 }
+  ],
+  tutmask:[
+    { prompt:"What was Tutankhamun's famous funeral mask made of?",
+      choices:["Silver","Painted clay","Gold"], answer:2 },
+    { prompt:"Where was Tutankhamun's tomb discovered?",
+      choices:["The Valley of the Kings","Inside a pyramid at Giza","Under a temple in Rome"], answer:0 }
+  ],
+  papyrus:[
+    { prompt:"How did Egyptians turn the papyrus plant into sheets?",
+      choices:["They melted it in ovens","They cut strips, pressed them together, and dried them","They wove it like cloth"], answer:1 },
+    { prompt:"Where does the papyrus plant grow?",
+      choices:["On mountain tops","Deep in the desert sand","Along the Nile River"], answer:2 }
+  ],
+  bread:[
+    { prompt:"In what year did Mount Vesuvius bury Pompeii?",
+      choices:["79 CE","1799","1922"], answer:0 },
+    { prompt:"What happened to the loaves of bread found at Pompeii?",
+      choices:["They were still warm","They turned into solid gold","They were blackened and preserved where bakers left them"], answer:2 }
+  ],
+  mosaic:[
+    { prompt:"What does 'CAVE CANEM' mean?",
+      choices:["Welcome, friends","Beware of the dog","The dog is friendly"], answer:1 },
+    { prompt:"What were Roman mosaics built from?",
+      choices:["Thousands of tiny pieces of colored stone or glass","One big painted sheet","Woven wool threads"], answer:0 }
+  ],
+  coin:[
+    { prompt:"Whose faces were stamped on Roman coins?",
+      choices:["The coin-makers","Emperors","Famous guard dogs"], answer:1 },
+    { prompt:"Why can historians tell when a Roman coin was made?",
+      choices:["They know the years each emperor ruled","Each coin lists its own date of sale","The metal changes color every year"], answer:0 }
+  ],
+  soldier:[
+    { prompt:"Whose tomb does the Terracotta Army guard?",
+      choices:["Tutankhamun's","A famous Roman general's","Qin Shi Huang, China's first emperor"], answer:2 },
+    { prompt:"What's special about the soldiers' faces?",
+      choices:["They are all identical","No two are exactly alike","They are all smiling"], answer:1 }
+  ],
+  chariot:[
+    { prompt:"How big are the bronze chariots?",
+      choices:["About half of real size","Twice real size","Exactly life-size"], answer:0 },
+    { prompt:"How many bronze chariots were found near the tomb?",
+      choices:["Two hundred","Ten","Two"], answer:2 }
+  ],
+  silk:[
+    { prompt:"What did ancient China do with the secret of silk-making?",
+      choices:["Guarded it for centuries","Posted it in every market","Traded it away immediately"], answer:0 },
+    { prompt:"Where did the Silk Road trade routes connect China to?",
+      choices:["Only nearby villages","Central Asia and Europe","The South Pole"], answer:1 }
+  ],
+  glyphs:[
+    { prompt:"What were Maya folding books made of?",
+      choices:["Bark paper","Papyrus from Egypt","Thin sheets of clay"], answer:0 },
+    { prompt:"What did the Maya record with their glyphs?",
+      choices:["Only music notes","Only numbers","Their history, rulers, and astronomy"], answer:2 }
+  ],
+  cacao:[
+    { prompt:"What did the Maya cacao drink taste like?",
+      choices:["Sweet like candy","Bitter and frothy","Salty like the sea"], answer:1 },
+    { prompt:"Who especially enjoyed the cacao drink?",
+      choices:["Nobles, and it was used in ceremonies","Nobody — it was only for decoration","Only visiting sailors"], answer:0 }
+  ],
+  zero:[
+    { prompt:"In Maya numbers, what did a single dot stand for?",
+      choices:["Five","Zero","One"], answer:2 },
+    { prompt:"What did the Maya number system help them build?",
+      choices:["Faster canoes","Remarkably accurate calendars","Taller pyramids"], answer:1 }
+  ],
+  mechanism:[
+    { prompt:"Who found the Antikythera shipwreck in 1900?",
+      choices:["Greek sponge divers","Farmers digging a well","Howard Carter"], answer:0 },
+    { prompt:"What was the Antikythera mechanism made of?",
+      choices:["Solid gold","Bronze, with dozens of interlocking gears","Carved wood only"], answer:1 }
+  ],
+  amphora:[
+    { prompt:"How many handles does an amphora have?",
+      choices:["Two","None at all","Six"], answer:0 },
+    { prompt:"How do amphorae help archaeologists map ancient trade routes?",
+      choices:["Each jar has a map painted on it","They study where each jar was made","The jars point toward home"], answer:1 }
+  ],
+  bronzeyouth:[
+    { prompt:"How big is the bronze statue of the young man?",
+      choices:["Pocket-sized","Child-sized","Larger than life"], answer:2 },
+    { prompt:"Where do many of the finest surviving ancient bronze statues come from?",
+      choices:["The bottom of the sea, in shipwrecks","The tops of volcanoes","Secret desert caves"], answer:0 }
+  ]
+};
+function allQs(art){ return [art.q].concat(EXTRA_QS[art.id]||[]); }
 
 const QUESTS = [
   { id:"first",   emoji:"🎖️", name:"First Find",
@@ -1598,11 +1694,11 @@ function closeModal(){
   state.tip = remaining ? line("backToDig") : line("siteDone");
   render();
 }
-function toQuiz(){ modal.phase = "quiz"; render(); }
+function toQuiz(){ modal.phase = "quiz"; modal.q = pick(allQs(modal.art)); render(); }
 
 function pickChoice(i, btn){
   const art = modal.art;
-  if(i === art.q.answer){
+  if(i === modal.q.answer){
     state.found[art.id] = true;
     QUESTS.forEach(q=>{
       if(!state.celebrated[q.id] && questDone(q)){
@@ -1911,7 +2007,7 @@ function renderModal(){
       <h3>${esc(art.name)}</h3>
       <div class="art-svg" style="width:88px;height:88px">${artOf(art.id)}</div>
       <div class="fact"><span class="fact-label">Field Fact — verified</span>${esc(art.fact)}</div>
-      <p class="quiz-q">${esc(art.q.prompt)}</p>
+      <p class="quiz-q">${esc(modal.q.prompt)}</p>
       <div class="choices" id="choices"></div>
       <p class="quiz-note" id="quiznote"></p>
     `;
@@ -1934,7 +2030,7 @@ function renderModal(){
     frag.getElementById("next").onclick = toQuiz;
   }else if(modal.phase==="quiz"){
     const wrap = frag.getElementById("choices");
-    art.q.choices.forEach((c,i)=>{
+    modal.q.choices.forEach((c,i)=>{
       const b = h(`<button class="choice ${modal.wrongPicks.has(i)?"wrong":""}">${esc(c)}</button>`).firstElementChild;
       b.onclick = ()=>pickChoice(i,b);
       wrap.append(b);
@@ -2030,28 +2126,34 @@ function renderGrandModal(){
 function startPopQuiz(){
   const pool = SITES.flatMap(s=>s.artifacts).filter(a=>state.found[a.id]);
   if(pool.length < 3) return;
-  state.quiz = { streak:0, lastId:null };
+  state.quiz = { streak:0, lastKey:null };
   nextPopQuestion();
 }
 function nextPopQuestion(){
-  const pool = SITES.flatMap(s=>s.artifacts).filter(a=>state.found[a.id] && a.id !== state.quiz.lastId);
-  const art = pick(pool);
-  state.quiz.lastId = art.id;
-  // shuffle answers, remember which is correct
-  const opts = art.q.choices.map((text,i)=>({text, correct:i===art.q.answer}));
+  const arts = SITES.flatMap(s=>s.artifacts).filter(a=>state.found[a.id]);
+  // build (artifact, question) pairs; exclude the exact question just asked
+  const pairs = [];
+  arts.forEach(a=>allQs(a).forEach((q,qi)=>{
+    const key = a.id+":"+qi;
+    if(key !== state.quiz.lastKey) pairs.push({art:a, q, key});
+  }));
+  const chosen = pick(pairs);
+  state.quiz.lastKey = chosen.key;
+  const opts = chosen.q.choices.map((text,i)=>({text, correct:i===chosen.q.answer}));
   shuffle(opts);
-  modal = { popquiz:true, art, opts, resolved:false };
+  modal = { popquiz:true, art:chosen.art, q:chosen.q, opts, resolved:false };
   render();
 }
 function renderPopQuizModal(){
   const { art, opts } = modal;
+  const q = modal.q;
   const frag = h(`
     <div class="overlay"><div class="card">
       <span class="eyebrow">🎓 ${esc(state.dogName)}'s Pop Quiz</span>
       <div class="streak-big">${state.quiz.streak}🔥</div>
       <div class="streak-sub">streak · best ever: ${Math.max(state.bestStreak, state.quiz.streak)}</div>
       <div class="art-svg" style="width:80px;height:80px">${artOf(art.id)}</div>
-      <p class="quiz-q">${esc(art.q.prompt)}</p>
+      <p class="quiz-q">${esc(q.prompt)}</p>
       <div class="choices" id="choices"></div>
       <p class="quiz-note" id="quiznote"></p>
       <div class="actions">
