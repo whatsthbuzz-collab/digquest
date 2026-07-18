@@ -46,10 +46,7 @@
   *{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
   html,body{height:100%;}
   body{
-    background:
-      radial-gradient(900px 420px at 50% -8%, rgba(255,176,46,0.16), transparent 62%),
-      var(--void);
-    background-attachment:fixed;
+    background:var(--void);
     color:var(--sand);
     font-family:var(--body);
     line-height:1.5;
@@ -267,7 +264,7 @@
       radial-gradient(circle at 22% 28%, rgba(255,255,255,.10) 1px, transparent 2px),
       radial-gradient(circle at 68% 62%, rgba(0,0,0,.22) 1.5px, transparent 3px),
       radial-gradient(circle at 45% 80%, rgba(255,255,255,.06) 1px, transparent 2px),
-      linear-gradient(160deg, var(--soil), var(--soil-deep));
+      linear-gradient(160deg, var(--soil-top), var(--soil));
     box-shadow:inset 0 -4px 0 rgba(0,0,0,.32), inset 0 2px 0 rgba(255,255,255,.09), 0 2px 6px rgba(0,0,0,.3);
     transition:transform .1s var(--spring), background .2s ease, box-shadow .2s ease;
     cursor:pointer;
@@ -275,9 +272,10 @@
   .tile:active{transform:scale(.9);}
   .tile.depth1{
     background:
-      radial-gradient(circle at 30% 30%, rgba(255,255,255,.12) 1.5px, transparent 3px),
-      radial-gradient(circle at 70% 65%, rgba(0,0,0,.18) 2px, transparent 4px),
-      linear-gradient(160deg, var(--soil-top), var(--soil));
+      radial-gradient(circle at 30% 30%, rgba(0,0,0,.22) 2px, transparent 4px),
+      radial-gradient(circle at 70% 65%, rgba(0,0,0,.25) 2.5px, transparent 5px),
+      linear-gradient(160deg, var(--soil), var(--soil-deep));
+    box-shadow:inset 0 3px 5px rgba(0,0,0,.4), inset 0 -2px 0 rgba(0,0,0,.25);
   }
   .tile.cleared{
     background:linear-gradient(160deg, #241a14, #191009);
@@ -350,6 +348,10 @@
     position:relative;
     animation:cardIn .45s var(--spring) both;
   }
+  .card{scrollbar-width:thin; scrollbar-color:#c9b380 transparent;}
+  .card::-webkit-scrollbar{width:7px;}
+  .card::-webkit-scrollbar-thumb{background:#c9b380; border-radius:99px;}
+  .card::-webkit-scrollbar-track{background:transparent;}
   .card::before{
     content:""; position:absolute; inset:0; border-radius:20px; pointer-events:none;
     background:linear-gradient(105deg, transparent 30%, rgba(255,255,255,.6) 46%, transparent 60%);
@@ -546,7 +548,7 @@
 <body>
 <div id="app"></div>
 <div id="fx"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v8</div>
+<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v9</div>
 
 <script>
 "use strict";
