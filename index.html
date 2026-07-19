@@ -353,6 +353,20 @@
   .card::-webkit-scrollbar-thumb{background:#c9b380; border-radius:99px;}
   .card::-webkit-scrollbar-track{background:transparent;}
   .card .eyebrow{color:var(--rust);}
+  .speak-btn{
+    display:inline-flex; align-items:center; gap:6px;
+    background:#fff7e6; border:2px solid #e0b34d; border-radius:999px;
+    color:var(--ink); font-family:var(--body); font-weight:800; font-size:13.5px;
+    padding:6px 14px; margin-top:10px; cursor:pointer;
+    box-shadow:0 2px 0 #d8a53d; transition:transform .08s ease;
+  }
+  .speak-btn:hover{ border-color:var(--rust); }
+  .speak-btn:active{ transform:translateY(2px); box-shadow:none; }
+  .speak-btn.speaking{ background:#ffe6a8; border-color:var(--rust); }
+  .rd-w{ border-radius:5px; padding:0 1px; transition:background .1s ease; }
+  .rd-w.reading{ background:#ffd23f; color:#2b1a08; box-shadow:0 0 0 3px #ffd23f; }
+  .choice.reading{ border-color:var(--amber) !important; box-shadow:0 0 0 3px rgba(255,176,46,.45) !important; }
+  .mute.off{ opacity:.32; }
   .card h3{font-size:26px; margin:4px 0 2px; color:var(--ink); font-weight:900; line-height:1.08;}
   .card .catalog{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; color:var(--ink-soft); text-transform:uppercase;}
   .card .art{font-size:70px; text-align:center; margin:12px 0;
@@ -449,6 +463,11 @@
   .tile.dive.cleared{
     background:linear-gradient(160deg, #143540, #0c222b);
     box-shadow:inset 0 4px 10px rgba(0,0,0,.65);
+  }
+  /* fragments must stay color-coded (gold/teal/pink) on dives too, exactly like land */
+  .tile.dive.fragment{
+    background:linear-gradient(160deg, var(--fc), color-mix(in srgb, var(--fc) 62%, #000));
+    box-shadow:0 0 0 2px rgba(255,255,255,.28) inset, 0 0 18px var(--fc), 0 3px 8px rgba(0,0,0,.4);
   }
   .pin-dot.dive{fill:#3ddad7; filter:drop-shadow(0 0 6px rgba(61,218,215,.9));}
   .pin-ring.dive{stroke:#3ddad7;}
@@ -582,7 +601,7 @@
 <body>
 <div id="app"></div>
 <div id="fx"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v11</div>
+<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v13</div>
 
 <script>
 "use strict";
@@ -1618,6 +1637,7 @@ const state = {
   tip:null,
   pose:"idle",
   muted:false,
+  readAloud:true,
   lastPos:null,
   museumBack:"map",
   grandOpened:false,
@@ -1770,7 +1790,7 @@ function saveProgress(){
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       found: state.found, celebrated: state.celebrated,
       xp: state.xp, dogName: state.dogName, seenIntro: state.seenIntro,
-      muted: state.muted, grandOpened: state.grandOpened, bestStreak: state.bestStreak,
+      muted: state.muted, readAloud: state.readAloud, grandOpened: state.grandOpened, bestStreak: state.bestStreak,
       oceanOpened: state.oceanOpened, activeComp: state.activeComp,
       compCelebrated: state.compCelebrated, toldTeam: state.toldTeam
     }));
@@ -1799,6 +1819,7 @@ function loadProgress(){
       if(typeof data.dogName === "string" && data.dogName.trim()) state.dogName = data.dogName.trim().slice(0,14);
       state.seenIntro = !!data.seenIntro || totalFound() > 0; // veterans skip the intro
       state.muted = !!data.muted;
+      state.readAloud = data.readAloud !== false;
       state.grandOpened = !!data.grandOpened || totalFound() === totalArtifacts(); // no stale ceremony on reload
       state.oceanOpened = !!data.oceanOpened || SITES.filter(s=>s.type==="dive").every(s=>foundCount(s)===s.artifacts.length);
       if(typeof data.bestStreak === "number" && data.bestStreak >= 0 && data.bestStreak < 10000) state.bestStreak = data.bestStreak;
@@ -2190,6 +2211,7 @@ function openDiscovery(art){
   render();
 }
 function closeModal(){
+  stopSpeaking();
   modal = null;
   if(discoveryQueue.length){ openDiscovery(discoveryQueue.shift()); return; }
   if(questQueue.length){ modal = { quest: questQueue.shift() }; SFX.quest(); render(); return; }
@@ -2209,9 +2231,10 @@ function closeModal(){
   state.tip = remaining ? line("backToDig") : line("siteDone");
   render();
 }
-function toQuiz(){ modal.phase = "quiz"; modal.q = pick(allQs(modal.art)); render(); }
+function toQuiz(){ stopSpeaking(); modal.phase = "quiz"; modal.q = pick(allQs(modal.art)); render(); }
 
 function pickChoice(i, btn){
+  stopSpeaking();
   const art = modal.art;
   if(i === modal.q.answer){
     state.found[art.id] = true;
@@ -2246,6 +2269,106 @@ function pickChoice(i, btn){
 /* ---------------- rendering ---------------- */
 function h(html){ const t=document.createElement("template"); t.innerHTML=html.trim(); return t.content; }
 function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+
+/* ---------------- read-along (text-to-speech + word highlight) ---------------- */
+let RD_SEQ = 0;
+const RD_TEXTS = {};
+let RD_ACTIVE = false;
+let _autoReadPlan = null;
+function readableParts(text){
+  const id = "rd" + (++RD_SEQ);
+  RD_TEXTS[id] = text;
+  let out = "", off = 0;
+  for(const p of String(text).split(/(\s+)/)){
+    if(p === "") continue;
+    if(/^\s+$/.test(p)){ out += p; off += p.length; }
+    else { out += `<span class="rd-w" data-s="${off}" data-e="${off + p.length}">${esc(p)}</span>`; off += p.length; }
+  }
+  return { id, html: out };
+}
+function readable(text){ const r = readableParts(text); return `<span class="rd" id="${r.id}">${r.html}</span>`; }
+function speakBtn(planIds, label){
+  const plan = Array.isArray(planIds) ? planIds.join(",") : planIds;
+  return `<button class="speak-btn" type="button" data-plan="${plan}" aria-label="Read aloud">🔊 <span>${esc(label || "Read to me")}</span></button>`;
+}
+function ttsSupported(){ return typeof window !== "undefined" && "speechSynthesis" in window; }
+function pickVoice(){
+  if(!ttsSupported()) return null;
+  const vs = window.speechSynthesis.getVoices() || [];
+  if(!vs.length) return null;
+  return vs.find(v=>/en[-_]US/i.test(v.lang) && /(Samantha|Google US English|Jenny|Aria|Zira|Female|Karen|Moira)/i.test(v.name))
+      || vs.find(v=>/en[-_]US/i.test(v.lang))
+      || vs.find(v=>/^en/i.test(v.lang))
+      || vs[0];
+}
+function stopSpeaking(){
+  RD_ACTIVE = false;
+  try{ if(ttsSupported()) window.speechSynthesis.cancel(); }catch(e){}
+  document.querySelectorAll(".rd-w.reading").forEach(w=>w.classList.remove("reading"));
+  document.querySelectorAll(".choice.reading").forEach(w=>w.classList.remove("reading"));
+  document.querySelectorAll(".speak-btn.speaking").forEach(b=>b.classList.remove("speaking"));
+}
+function speakParts(parts, sourceBtn){
+  if(!ttsSupported() || !parts || !parts.length) return;
+  stopSpeaking();
+  RD_ACTIVE = true;
+  if(sourceBtn) sourceBtn.classList.add("speaking");
+  let i = 0;
+  const runNext = ()=>{
+    if(!RD_ACTIVE || i >= parts.length){
+      RD_ACTIVE = false;
+      if(sourceBtn) sourceBtn.classList.remove("speaking");
+      return;
+    }
+    const part = parts[i++];
+    const u = new SpeechSynthesisUtterance(part.text);
+    u.rate = 0.86; u.pitch = 1.06; u.lang = "en-US";
+    const v = pickVoice(); if(v) u.voice = v;
+    const words = part.wordsEl ? [...part.wordsEl.querySelectorAll(".rd-w")] : [];
+    if(part.highlightEl) part.highlightEl.classList.add("reading");
+    u.onboundary = (e)=>{
+      if(e.name && e.name !== "word") return;
+      const ci = e.charIndex;
+      let hit = null;
+      for(const w of words){ if(ci >= +w.dataset.s && ci < +w.dataset.e){ hit = w; break; } }
+      if(hit){ words.forEach(w=>w.classList.remove("reading")); hit.classList.add("reading"); }
+    };
+    const cleanup = ()=>{
+      words.forEach(w=>w.classList.remove("reading"));
+      if(part.highlightEl) part.highlightEl.classList.remove("reading");
+    };
+    u.onend = ()=>{ cleanup(); runNext(); };
+    u.onerror = ()=>{ cleanup(); runNext(); };
+    try{ window.speechSynthesis.speak(u); }catch(e){ cleanup(); runNext(); }
+  };
+  runNext();
+}
+function readPlan(ids, sourceBtn){
+  const parts = (ids || []).map(id=>{
+    const el = document.getElementById(id);
+    if(!el || !(id in RD_TEXTS)) return null;
+    return { text: RD_TEXTS[id], wordsEl: el, highlightEl: el.classList.contains("choice") ? el : null };
+  }).filter(Boolean);
+  speakParts(parts, sourceBtn);
+}
+function wireSpeak(frag){
+  frag.querySelectorAll(".speak-btn").forEach(btn=>{
+    btn.addEventListener("click", ev=>{
+      ev.stopPropagation();
+      readPlan((btn.dataset.plan || "").split(",").filter(Boolean), btn);
+    });
+  });
+}
+function maybeAutoRead(){
+  if(_autoReadPlan && state.readAloud){
+    const plan = _autoReadPlan;
+    setTimeout(()=>{ if(document.getElementById(plan[0])) readPlan(plan); }, 420);
+  }
+  _autoReadPlan = null;
+}
+if(typeof window !== "undefined" && "speechSynthesis" in window){
+  try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = ()=>{ window.speechSynthesis.getVoices(); }; }catch(e){}
+}
 function artOf(id){ return ART[id] || ""; }
 
 function render(){
@@ -2266,6 +2389,7 @@ function render(){
     else if(modal.newcomp) app.append(renderCompModal());
     else if(modal.popquiz) app.append(renderPopQuizModal());
     else app.append(renderModal());
+    maybeAutoRead();
   }
 }
 
@@ -2396,6 +2520,7 @@ function renderMap(){
         <span class="title">⛏️ Dig Quest</span>
         <span style="display:flex; align-items:center; gap:8px;">
           <span class="eyebrow">${done}/${total} certified</span>
+          <button class="mute ${state.readAloud?'':'off'}" id="readtoggle" aria-label="read aloud" title="Read aloud">📖</button>
           <button class="mute" id="mute" aria-label="sound">${state.muted?"🔇":"🔊"}</button>
         </span>
       </div>
@@ -2439,6 +2564,7 @@ function renderMap(){
   frag.getElementById("museum").onclick = ()=>{ state.museumBack="map"; state.screen="museum"; render(); };
   frag.getElementById("quests").onclick = ()=>{ state.screen="quests"; render(); };
   frag.getElementById("mute").onclick = ()=>{ state.muted=!state.muted; saveProgress(); render(); };
+  { const rt = frag.getElementById("readtoggle"); if(rt) rt.onclick = ()=>{ state.readAloud=!state.readAloud; if(!state.readAloud) stopSpeaking(); saveProgress(); render(); }; }
   const tr = frag.getElementById("teamrow");
   if(tr){
     tr.querySelectorAll(".team-chip").forEach(chip=>{
@@ -2506,6 +2632,7 @@ function renderDig(){
         <button class="btn-ghost" id="back">← Map</button>
         <span style="display:flex; align-items:center; gap:8px;">
           <button class="btn-ghost" id="museum">🏛️</button>
+          <button class="mute ${state.readAloud?'':'off'}" id="readtoggle" aria-label="read aloud" title="Read aloud">📖</button>
           <button class="mute" id="mute" aria-label="sound">${state.muted?"🔇":"🔊"}</button>
         </span>
       </div>
@@ -2556,32 +2683,38 @@ function renderDig(){
   frag.getElementById("back").onclick = ()=>{ state.tip=null; state.screen="map"; render(); };
   frag.getElementById("museum").onclick = ()=>{ state.museumBack="dig"; state.screen="museum"; render(); };
   frag.getElementById("mute").onclick = ()=>{ state.muted=!state.muted; saveProgress(); render(); };
+  { const rt = frag.getElementById("readtoggle"); if(rt) rt.onclick = ()=>{ state.readAloud=!state.readAloud; if(!state.readAloud) stopSpeaking(); saveProgress(); render(); }; }
   frag.getElementById("toolBrush").onclick = ()=>{ ac(); SFX.clink(); state.tool="brush"; dogSay("idle", line("brushPick")); render(); };
   frag.getElementById("toolShovel").onclick = ()=>{ ac(); SFX.clink(); state.tool="shovel"; dogSay("idle", line("shovelPick")); render(); };
   frag.getElementById("toolSniff").onclick = ()=>{ ac(); sniff(); };
   return frag;
 }
 
+let _certRid = "";
 function renderModal(){
   const art = modal.art;
   let inner = "";
   if(modal.phase==="fact"){
+    const rf = readableParts(art.fact);
     inner = `
       <span class="eyebrow">Discovery!</span>
       <h3>${esc(art.name)}</h3>
       <div class="catalog">Catalog № ${art.cat}</div>
       <div class="art-svg">${artOf(art.id)}</div>
-      <div class="fact"><span class="fact-label">Field Fact — verified</span>${esc(art.fact)}</div>
+      <div class="fact"><span class="fact-label">Field Fact — verified</span><span class="rd" id="${rf.id}">${rf.html}</span><br>${speakBtn(rf.id)}</div>
       <div class="actions"><button class="btn-main" id="next">I read it — quiz me!</button></div>
     `;
+    _autoReadPlan = [rf.id];
   }else if(modal.phase==="quiz"){
+    const rq = readableParts(modal.q.prompt);
+    modal._qid = rq.id;
     inner = `
       <span class="eyebrow">Field Certification</span>
       <h3>${esc(art.name)}</h3>
       <div class="art-svg" style="width:88px;height:88px">${artOf(art.id)}</div>
-      <div class="fact"><span class="fact-label">Field Fact — verified</span>${esc(art.fact)}</div>
-      <p class="quiz-q">${esc(modal.q.prompt)}</p>
+      <p class="quiz-q"><span class="rd" id="${rq.id}">${rq.html}</span></p>
       <div class="choices" id="choices"></div>
+      <div id="quizreadslot"></div>
       <p class="quiz-note" id="quiznote"></p>
     `;
   }else{
@@ -2593,7 +2726,7 @@ function renderModal(){
         <div class="art-svg">${artOf(art.id)}</div>
         <span class="stamp slam">Certified Find</span>
       </div>
-      <div class="fact"><span class="fact-label">You learned a true thing</span>${esc(art.fact)}</div>
+      <div class="fact"><span class="fact-label">You learned a true thing</span>${(()=>{const r=readableParts(art.fact); _certRid=r.id; return `<span class="rd" id="${r.id}">${r.html}</span>`;})()}<br>${speakBtn(_certRid)}</div>
       ${learnBlock(siteOfArtifact(art.id).id)}
       <div class="actions"><button class="btn-main" id="close">Keep digging</button></div>
     `;
@@ -2603,14 +2736,22 @@ function renderModal(){
     frag.getElementById("next").onclick = toQuiz;
   }else if(modal.phase==="quiz"){
     const wrap = frag.getElementById("choices");
+    const choiceIds = [];
     modal.q.choices.forEach((c,i)=>{
-      const b = h(`<button class="choice ${modal.wrongPicks.has(i)?"wrong":""}">${esc(c)}</button>`).firstElementChild;
+      const r = readableParts(c);
+      choiceIds.push(r.id);
+      const b = h(`<button class="choice ${modal.wrongPicks.has(i)?"wrong":""}" id="${r.id}">${r.html}</button>`).firstElementChild;
       b.onclick = ()=>pickChoice(i,b);
       wrap.append(b);
     });
+    const plan = [modal._qid, ...choiceIds];
+    const slot = frag.getElementById("quizreadslot");
+    if(slot) slot.innerHTML = speakBtn(plan, "Read question & choices");
+    _autoReadPlan = plan;
   }else{
     frag.getElementById("close").onclick = closeModal;
   }
+  wireSpeak(frag);
   return frag;
 }
 
@@ -2651,6 +2792,7 @@ function renderRankModal(){
   return frag;
 }
 
+let _exhRid = "";
 function renderExhibitModal(){
   const a = modal.exhibit;
   const frag = h(`
@@ -2659,12 +2801,14 @@ function renderExhibitModal(){
       <h3>${esc(a.name)}</h3>
       <div class="catalog">Catalog № ${a.cat}</div>
       <div class="art-svg">${artOf(a.id)}</div>
-      <div class="fact"><span class="fact-label">The true story</span>${esc(a.fact)}</div>
+      <div class="fact"><span class="fact-label">The true story</span>${(()=>{const r=readableParts(a.fact); _exhRid=r.id; return `<span class="rd" id="${r.id}">${r.html}</span>`;})()}<br>${speakBtn(_exhRid)}</div>
       ${learnBlock(siteOfArtifact(a.id).id)}
       <div class="actions"><button class="btn-main" id="close">Back to the hall</button></div>
     </div></div>
   `);
   frag.getElementById("close").onclick = ()=>{ modal=null; render(); };
+  _autoReadPlan = [_exhRid];
+  wireSpeak(frag);
   return frag;
 }
 
@@ -2767,8 +2911,9 @@ function renderPopQuizModal(){
       <div class="streak-big">${state.quiz.streak}🔥</div>
       <div class="streak-sub">streak · best ever: ${Math.max(state.bestStreak, state.quiz.streak)}</div>
       <div class="art-svg" style="width:80px;height:80px">${artOf(art.id)}</div>
-      <p class="quiz-q">${esc(q.prompt)}</p>
+      <p class="quiz-q">${(()=>{const r=readableParts(q.prompt); _pqQid=r.id; return `<span class="rd" id="${r.id}">${r.html}</span>`;})()}</p>
       <div class="choices" id="choices"></div>
+      <div id="pqreadslot"></div>
       <p class="quiz-note" id="quiznote"></p>
       <div class="actions">
         <button class="btn-ghost" id="quit" style="flex:1; color:var(--ink-soft); border-color:#d8c69f">I'm done for now</button>
@@ -2776,8 +2921,11 @@ function renderPopQuizModal(){
     </div></div>
   `);
   const wrap = frag.getElementById("choices");
+  const _pqChoiceIds = [];
   opts.forEach((o,i)=>{
-    const b = h(`<button class="choice">${esc(o.text)}</button>`).firstElementChild;
+    const _r = readableParts(o.text);
+    _pqChoiceIds.push(_r.id);
+    const b = h(`<button class="choice" id="${_r.id}">${_r.html}</button>`).firstElementChild;
     b.onclick = ()=>{
       if(modal.resolved) return;
       if(o.correct){
@@ -2809,10 +2957,16 @@ function renderPopQuizModal(){
     };
     wrap.append(b);
   });
-  frag.getElementById("quit").onclick = ()=>{ state.quiz=null; modal=null; render(); };
+  frag.getElementById("quit").onclick = ()=>{ stopSpeaking(); state.quiz=null; modal=null; render(); };
+  const _pqplan = [_pqQid, ..._pqChoiceIds];
+  const _slot = frag.getElementById("pqreadslot");
+  if(_slot) _slot.innerHTML = speakBtn(_pqplan, "Read question & choices");
+  _autoReadPlan = _pqplan;
+  wireSpeak(frag);
   return frag;
 }
 
+let _pqQid = "";
 function renderMuseum(){
   const frag = h(`
     <div>
