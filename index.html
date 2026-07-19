@@ -602,7 +602,7 @@
 <body>
 <div id="app"></div>
 <div id="fx"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v15</div>
+<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v16</div>
 
 <script>
 "use strict";
@@ -2336,46 +2336,90 @@ function compVoiceTune(){
 }
 function stopSpeaking(){
   RD_ACTIVE = false;
+  RD_GEN++;                    // invalidates any pending timers/watchdogs
   try{ if(ttsSupported()) window.speechSynthesis.cancel(); }catch(e){}
   document.querySelectorAll(".rd-w.reading").forEach(w=>w.classList.remove("reading"));
   document.querySelectorAll(".choice.reading").forEach(w=>w.classList.remove("reading"));
   document.querySelectorAll(".speak-btn.speaking").forEach(b=>b.classList.remove("speaking"));
 }
+let RD_GEN = 0;          // generation counter — stale callbacks bail out
+let _rdUtter = null;     // GLOBAL ref: Chrome garbage-collects unreferenced utterances mid-speech
+function _splitSentences(text){
+  // short utterances dodge Chrome's ~15-second speech cutoff bug
+  const out = [];
+  const re = /[^.!?…]+[.!?…]*\s*/g;
+  let m, off = 0;
+  while((m = re.exec(text)) !== null){ out.push({ text: m[0], base: m.index }); off = m.index + m[0].length; }
+  if(!out.length) out.push({ text, base: 0 });
+  return out;
+}
 function speakParts(parts, sourceBtn){
   if(!ttsSupported() || !parts || !parts.length) return;
   stopSpeaking();
+  const gen = RD_GEN;
   RD_ACTIVE = true;
   if(sourceBtn) sourceBtn.classList.add("speaking");
-  let i = 0;
-  const runNext = ()=>{
-    if(!RD_ACTIVE || i >= parts.length){
-      RD_ACTIVE = false;
-      if(sourceBtn) sourceBtn.classList.remove("speaking");
-      return;
-    }
-    const part = parts[i++];
-    const u = new SpeechSynthesisUtterance(part.text);
-    const tune = compVoiceTune();
-    u.rate = tune.rate; u.pitch = tune.pitch; u.lang = "en-US";
-    const v = pickVoice(); if(v) u.voice = v;
+  // flatten: every part becomes sentence-chunks that remember their word list + base offset
+  const chunks = [];
+  parts.forEach(part=>{
     const words = part.wordsEl ? [...part.wordsEl.querySelectorAll(".rd-w")] : [];
-    if(part.highlightEl) part.highlightEl.classList.add("reading");
+    _splitSentences(part.text).forEach(s=>{
+      chunks.push({ text: s.text, base: s.base, words, highlightEl: part.highlightEl || null });
+    });
+  });
+  let i = 0;
+  const finish = ()=>{
+    if(gen !== RD_GEN) return;
+    RD_ACTIVE = false;
+    if(sourceBtn) sourceBtn.classList.remove("speaking");
+  };
+  const speakChunk = (chunk, retried)=>{
+    if(gen !== RD_GEN || !RD_ACTIVE) return;
+    const u = new SpeechSynthesisUtterance(chunk.text);
+    _rdUtter = u;                                  // hold reference (anti-GC)
+    const tune = compVoiceTune();
+    u.rate = tune.rate; u.pitch = tune.pitch; u.volume = 1; u.lang = "en-US";
+    if(!retried){ const v = pickVoice(); if(v) u.voice = v; }   // retry uses browser default
+    if(chunk.highlightEl) chunk.highlightEl.classList.add("reading");
+    let started = false;
+    u.onstart = ()=>{ started = true; };
     u.onboundary = (e)=>{
+      if(gen !== RD_GEN) return;
       if(e.name && e.name !== "word") return;
-      const ci = e.charIndex;
+      const ci = chunk.base + e.charIndex;
       let hit = null;
-      for(const w of words){ if(ci >= +w.dataset.s && ci < +w.dataset.e){ hit = w; break; } }
-      if(hit){ words.forEach(w=>w.classList.remove("reading")); hit.classList.add("reading"); }
+      for(const w of chunk.words){ if(ci >= +w.dataset.s && ci < +w.dataset.e){ hit = w; break; } }
+      if(hit){ chunk.words.forEach(w=>w.classList.remove("reading")); hit.classList.add("reading"); }
     };
     const cleanup = ()=>{
-      words.forEach(w=>w.classList.remove("reading"));
-      if(part.highlightEl) part.highlightEl.classList.remove("reading");
+      chunk.words.forEach(w=>w.classList.remove("reading"));
+      if(chunk.highlightEl) chunk.highlightEl.classList.remove("reading");
     };
-    u.onend = ()=>{ cleanup(); runNext(); };
-    u.onerror = ()=>{ cleanup(); runNext(); };
-    try{ window.speechSynthesis.speak(u); }catch(e){ cleanup(); runNext(); }
+    u.onend = ()=>{ if(gen !== RD_GEN) return; cleanup(); next(); };
+    u.onerror = ()=>{ if(gen !== RD_GEN) return; cleanup(); next(); };
+    try{
+      window.speechSynthesis.resume();             // un-sticks Chrome's phantom paused state
+      window.speechSynthesis.speak(u);
+    }catch(e){ cleanup(); next(); return; }
+    // watchdog: if audio never starts, retry once with the browser's DEFAULT voice
+    setTimeout(()=>{
+      if(gen !== RD_GEN || started || !RD_ACTIVE) return;
+      try{ window.speechSynthesis.cancel(); }catch(e){}
+      if(!retried){
+        _rdVoicePicked = true; _rdVoice = null;    // bad voice — stop using it for this session
+        setTimeout(()=>{ if(gen === RD_GEN && RD_ACTIVE) speakChunk(chunk, true); }, 120);
+      }else{
+        cleanup(); next();
+      }
+    }, 2000);
   };
-  runNext();
+  const next = ()=>{
+    if(gen !== RD_GEN || !RD_ACTIVE || i >= chunks.length){ finish(); return; }
+    speakChunk(chunks[i++], false);
+  };
+  // Chrome bug: speak() immediately after cancel() silently never starts.
+  // A short delay between them makes it reliable.
+  setTimeout(()=>{ if(gen === RD_GEN && RD_ACTIVE) next(); }, 120);
 }
 function readPlan(ids, sourceBtn){
   const parts = (ids || []).map(id=>{
@@ -2407,6 +2451,21 @@ function maybeAutoRead(){
 }
 if(typeof window !== "undefined" && "speechSynthesis" in window){
   try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = ()=>{ _rdVoicePicked = false; window.speechSynthesis.getVoices(); }; }catch(e){}
+  // some browsers only allow speech after a speak() fired directly inside a user gesture —
+  // unlock with a silent utterance on the first tap/click anywhere
+  let _rdUnlocked = false;
+  const _rdUnlock = ()=>{
+    if(_rdUnlocked) return;
+    _rdUnlocked = true;
+    try{
+      const u = new SpeechSynthesisUtterance(" ");
+      u.volume = 0;
+      window.speechSynthesis.resume();
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+    document.removeEventListener("pointerdown", _rdUnlock, true);
+  };
+  document.addEventListener("pointerdown", _rdUnlock, true);
 }
 function artOf(id){ return ART[id] || ""; }
 
