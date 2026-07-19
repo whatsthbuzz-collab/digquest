@@ -356,9 +356,14 @@
     content:""; position:absolute; inset:0; border-radius:20px; pointer-events:none;
     background:linear-gradient(105deg, transparent 30%, rgba(255,255,255,.6) 46%, transparent 60%);
     background-size:250% 100%;
+    opacity:0;
     animation:sheen 1.1s ease .2s both;
   }
-  @keyframes sheen{from{background-position:150% 0;} to{background-position:-90% 0;}}
+  @keyframes sheen{
+    0%{background-position:150% 0; opacity:1;}
+    80%{opacity:1;}
+    100%{background-position:-120% 0; opacity:0;}
+  }
   .card .eyebrow{color:var(--rust);}
   .card h3{font-size:26px; margin:4px 0 2px; color:var(--ink); font-weight:900; line-height:1.08;}
   .card .catalog{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; color:var(--ink-soft); text-transform:uppercase;}
@@ -436,6 +441,44 @@
     *,*::before,*::after{animation-duration:.01ms !important; transition-duration:.01ms !important;}
     .particle{display:none;}
   }
+
+  /* ---------- dive sites ---------- */
+  .tile.dive{
+    background:
+      radial-gradient(circle at 25% 30%, rgba(255,255,255,.14) 1.5px, transparent 3px),
+      radial-gradient(circle at 70% 60%, rgba(0,0,0,.14) 2px, transparent 4px),
+      linear-gradient(160deg, #7ec4c9, #4f9aa6);
+  }
+  .tile.dive.depth1{
+    background:
+      radial-gradient(circle at 30% 30%, rgba(0,0,0,.2) 2px, transparent 4px),
+      linear-gradient(160deg, #3f8794, #2c6472);
+    box-shadow:inset 0 3px 5px rgba(0,0,0,.4), inset 0 -2px 0 rgba(0,0,0,.25);
+  }
+  .tile.dive.cleared{
+    background:linear-gradient(160deg, #143540, #0c222b);
+    box-shadow:inset 0 4px 10px rgba(0,0,0,.65);
+  }
+  .pin-dot.dive{fill:#3ddad7; filter:drop-shadow(0 0 6px rgba(61,218,215,.9));}
+  .pin-ring.dive{stroke:#3ddad7;}
+
+  /* ---------- companion picker ---------- */
+  .team-row{display:flex; gap:8px; margin-top:10px; flex-wrap:wrap;}
+  .team-chip{
+    display:flex; flex-direction:column; align-items:center; gap:2px;
+    background:rgba(255,255,255,.04); border:2px solid var(--line);
+    border-radius:12px; padding:7px 9px 5px; min-width:64px;
+    transition:all .15s var(--spring);
+  }
+  .team-chip:hover{border-color:var(--amber);}
+  .team-chip:active{transform:scale(.95);}
+  .team-chip.active{border-color:var(--amber); background:rgba(255,176,46,.12);}
+  .team-chip.locked{opacity:.55;}
+  .team-chip .t-av{width:40px; height:38px;}
+  .team-chip .t-av svg{width:100%; height:100%;}
+  .team-chip .t-name{font-size:10.5px; font-weight:700; color:var(--sand);}
+  .team-chip.active .t-name{color:var(--amber-hot);}
+  .team-chip .t-lock{font-size:20px; line-height:38px;}
 
   /* ---------- Scout the dig dog ---------- */
   .scout-row{display:flex; gap:10px; align-items:flex-end; margin-top:12px;}
@@ -548,7 +591,7 @@
 <body>
 <div id="app"></div>
 <div id="fx"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v9</div>
+<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v10</div>
 
 <script>
 "use strict";
@@ -796,6 +839,89 @@ const SITES = [
         }
       }
     ]
+  }  ,{
+    id:"titanic",
+    type:"dive",
+    name:"Wreck of the Titanic",
+    where:"North Atlantic · deep dive",
+    emoji:"🚢",
+    blurb:"The world's most famous shipwreck, resting 3,800 meters beneath the waves.",
+    artifacts:[
+      {
+        id:"telegraph", emoji:"🕹️", name:"Engine-Order Telegraph", cat:"TI-001",
+        fact:"The Titanic struck an iceberg and sank in the North Atlantic in April 1912. About 1,500 people were lost, and the wreck is protected today as a memorial to them. On the ship's bridge stood engine-order telegraphs — dial machines that officers used to ring commands like FULL SPEED or STOP down to the engine room far below.",
+        q:{ prompt:"What was an engine-order telegraph used for?",
+          choices:["Sending letters to shore","Ringing speed commands from the bridge down to the engine room","Playing music for passengers"], answer:1 }
+      },
+      {
+        id:"porthole", emoji:"🔵", name:"Brass Porthole", cat:"TI-002",
+        fact:"The Titanic's wreck wasn't found until 1985, when a team led by Robert Ballard and Jean-Louis Michel finally located it — about 3,800 meters (12,500 feet) down, far too deep for any scuba diver. The site is explored with submersibles and robots, whose cameras have photographed portholes, dishes, and shoes resting in the dark.",
+        q:{ prompt:"Why do explorers use robots and submersibles at the Titanic?",
+          choices:["Robots enjoy history","The water is too cold for boats","The wreck is far too deep for scuba divers"], answer:2 }
+      },
+      {
+        id:"rusticle", emoji:"🧪", name:"Rusticle", cat:"TI-003",
+        fact:"The wreck is draped in 'rusticles' — icicle-shaped rust formations that are actually communities of bacteria slowly eating the ship's iron. Scientists studying them even discovered a brand-new species of bacterium there and named it after the ship: Halomonas titanicae.",
+        q:{ prompt:"What are rusticles?",
+          choices:["Rust icicles formed by bacteria eating the ship's iron","Frozen seawater stuck to the hull","Decorations the crew hung up"], answer:0 }
+      }
+    ]
+  },
+  {
+    id:"portroyal",
+    type:"dive",
+    name:"Port Royal",
+    where:"Jamaica · harbor dive",
+    emoji:"🏴‍☠️",
+    blurb:"A pirate-era city that sank beneath the sea in 1692 — streets and all.",
+    artifacts:[
+      {
+        id:"stoppedwatch", emoji:"⌚", name:"The Stopped Pocket Watch", cat:"PR-001",
+        fact:"On June 7, 1692, a huge earthquake struck Port Royal, Jamaica, and much of the city slid beneath the sea. In 1959, underwater archaeologists recovered a brass pocket watch from the harbor floor — its hands frozen at about 11:43, recording the very moment disaster struck.",
+        q:{ prompt:"What does the recovered pocket watch tell us?",
+          choices:["The moment the earthquake struck — about 11:43","How much the watch cost","The name of its owner"], answer:0 }
+      },
+      {
+        id:"onionbottle", emoji:"🍾", name:"Onion Bottle", cat:"PR-002",
+        fact:"Before the earthquake, Port Royal was one of the busiest, richest ports in the Americas — a famous haven for pirates and privateers, nicknamed 'the wickedest city in the New World.' Divers have recovered everyday treasures from its sunken streets: round glass 'onion bottles,' clay pipes, and pewter mugs.",
+        q:{ prompt:"What was Port Royal's famous nickname?",
+          choices:["The quietest town in the Caribbean","The wickedest city in the New World","The city of a thousand cats"], answer:1 }
+      },
+      {
+        id:"sunkencity", emoji:"🌊", name:"Streets Beneath the Sea", cat:"PR-003",
+        fact:"Port Royal is one of the few sunken cities on Earth where archaeologists can swim along actual 1600s streets. Because sand and water covered everything so quickly, buildings and objects were preserved right where they stood — a genuine underwater time capsule that scientists still study today.",
+        q:{ prompt:"Why is Port Royal so special to archaeologists?",
+          choices:["The water there is extra clear","Pirate treasure washes up daily","The city was preserved in place, like an underwater time capsule"], answer:2 }
+      }
+    ]
+  },
+  {
+    id:"bermuda",
+    type:"dive",
+    name:"Bermuda Shipwreck Reefs",
+    where:"Bermuda · reef dive",
+    emoji:"⚓",
+    blurb:"Hundreds of wrecks on hidden reefs — plus one famous myth to bust.",
+    artifacts:[
+      {
+        id:"anchor", emoji:"⚓", name:"Ship's Anchor", cat:"BM-001",
+        fact:"The island of Bermuda is surrounded by a ring of hidden coral reefs that wrecked hundreds of sailing ships over five centuries — so many that Bermuda is often called the shipwreck capital of the Atlantic. Today the wrecks are protected, and divers study them like underwater museums.",
+        q:{ prompt:"Why did so many ships wreck at Bermuda?",
+          choices:["Hidden coral reefs surround the island","Sailors kept falling asleep","The island moves around at night"], answer:0 }
+      },
+      {
+        id:"seaventure", emoji:"⛵", name:"Timbers of the Sea Venture", cat:"BM-002",
+        fact:"In 1609, the English ship Sea Venture was driven onto Bermuda's reefs by a fierce storm while carrying settlers to Virginia. Everyone aboard made it ashore — and the castaways then built two brand-new ships out of Bermuda cedar and pieces of the wreck, and sailed on to Jamestown.",
+        q:{ prompt:"What did the Sea Venture castaways do after the wreck?",
+          choices:["Waited fifty years to be rescued","Built two new ships and sailed on to Jamestown","Decided to become pirates"], answer:1 }
+      },
+      {
+        id:"trianglecase", emoji:"🔍", name:"Case File: The Triangle Myth", cat:"BM-003",
+        fact:"Spooky stories claim ships and planes vanish mysteriously in the 'Bermuda Triangle.' But real investigators checked the evidence: the U.S. Coast Guard and NOAA found that disappearances happen NO more often there than in any other busy stretch of ocean — and the insurance experts at Lloyd's of London don't even charge extra to sail through it. Case closed: evidence beats spooky stories.",
+        q:{ prompt:"What did investigators discover about the Bermuda Triangle?",
+          choices:["Ships vanish there every single day","It's guarded by sea monsters","Disappearances are no more common there than in other busy ocean areas"], answer:2 }
+      }
+    ]
   }
 ];
 
@@ -963,7 +1089,7 @@ bronzeyouth: artWrap(`
 };
 
 /* ---------------- Scout the dog ---------------- */
-function scoutSVG(pose){
+function scoutSVG(pose, dive){
   pose = pose || "idle";
   const earL = pose==="alert"
     ? `<path d="M34,26 Q28,6 44,10 Q50,14 46,28 Z" fill="#5e442c"/>`
@@ -998,10 +1124,191 @@ function scoutSVG(pose){
       <ellipse cx="56" cy="48" rx="6" ry="4.5" fill="#2b2118"/>
       ${eyes}${mouth}
       <path d="M38,64 L56,74 L74,64 L70,58 L56,64 L42,58 Z" fill="#c14b32"/>
+      ${dive?diveGear(56,40,46):""}
     </g>${mark}
   </svg>`;
 }
 
+
+
+/* ---------------- dive artifact art ---------------- */
+Object.assign(ART, {
+telegraph: artWrap(`
+  <rect x="52" y="60" width="16" height="40" rx="4" fill="#c99223"/>
+  <rect x="42" y="96" width="36" height="8" rx="3" fill="#a5793f"/>
+  <circle cx="60" cy="42" r="24" fill="#e8b73a"/>
+  <circle cx="60" cy="42" r="18" fill="#f3e6c8" stroke-width="2"/>
+  <g stroke="#2b2118" stroke-width="2">
+    ${Array.from({length:8},(_,i)=>{const a=i*Math.PI/4 - Math.PI/2;return `<path d="M${60+13*Math.cos(a)},${42+13*Math.sin(a)} L${60+17*Math.cos(a)},${42+17*Math.sin(a)}"/>`;}).join("")}
+  </g>
+  <path d="M60,42 L48,30" stroke-width="4"/>
+  <circle cx="60" cy="42" r="3.5" fill="#c14b32"/>
+  <path d="M78,26 Q88,20 90,30" fill="none" stroke-width="4"/>
+  <circle cx="90" cy="32" r="5" fill="#c14b32"/>`),
+porthole: artWrap(`
+  <circle cx="60" cy="58" r="40" fill="#c99223"/>
+  <circle cx="60" cy="58" r="30" fill="#2c5f8a"/>
+  <circle cx="60" cy="58" r="30" fill="none" stroke-width="3"/>
+  ${Array.from({length:8},(_,i)=>{const a=i*Math.PI/4;return `<circle cx="${60+35*Math.cos(a)}" cy="${58+35*Math.sin(a)}" r="3" fill="#a5793f"/>`;}).join("")}
+  <path d="M42,46 Q52,38 66,40" stroke="#7ec4e8" stroke-width="3" fill="none" opacity=".7"/>
+  <path d="M66,64 q4,-4 8,0 q-4,4 -8,0 Z" fill="#ffc233" stroke-width="2"/>
+  <circle cx="73" cy="63" r="1" fill="#2b2118" stroke="none"/>
+  <circle cx="50" cy="70" r="2.5" fill="none" stroke="#7ec4e8" stroke-width="1.5"/>
+  <circle cx="46" cy="62" r="1.8" fill="none" stroke="#7ec4e8" stroke-width="1.5"/>`),
+rusticle: artWrap(`
+  <rect x="24" y="20" width="72" height="14" rx="4" fill="#5a5650"/>
+  <path d="M34,34 Q30,52 36,66 Q40,74 42,62 Q44,48 40,34 Z" fill="#c96f3f"/>
+  <path d="M52,34 Q46,58 54,82 Q58,92 60,76 Q62,54 58,34 Z" fill="#b4552d"/>
+  <path d="M72,34 Q68,50 74,60 Q78,66 79,56 Q80,44 77,34 Z" fill="#c96f3f"/>
+  <path d="M88,34 Q86,44 90,50" fill="none" stroke-width="3" stroke="#b4552d"/>
+  <g fill="#ffc233" stroke="none">
+    <circle cx="44" cy="46" r="1.6"/><circle cx="57" cy="60" r="1.6"/><circle cx="75" cy="48" r="1.6"/><circle cx="55" cy="74" r="1.6"/>
+  </g>
+  <circle cx="86" cy="72" r="2.5" fill="none" stroke="#7ec4e8" stroke-width="1.5"/>
+  <circle cx="90" cy="62" r="1.8" fill="none" stroke="#7ec4e8" stroke-width="1.5"/>`),
+stoppedwatch: artWrap(`
+  <path d="M60,18 q8,0 8,6 l-4,4 h-8 l-4,-4 q0,-6 8,-6 Z" fill="#c99223"/>
+  <circle cx="60" cy="62" r="36" fill="#e8b73a"/>
+  <circle cx="60" cy="62" r="29" fill="#f8f2e2" stroke-width="2"/>
+  <g stroke="#2b2118" stroke-width="2">
+    ${Array.from({length:12},(_,i)=>{const a=i*Math.PI/6 - Math.PI/2;return `<path d="M${60+24*Math.cos(a)},${62+24*Math.sin(a)} L${60+27*Math.cos(a)},${62+27*Math.sin(a)}"/>`;}).join("")}
+  </g>
+  <path d="M60,62 L58.2,44" stroke-width="3.5"/>
+  <path d="M60,62 L44,76" stroke-width="2.5"/>
+  <circle cx="60" cy="62" r="3" fill="#c14b32"/>
+  <text x="60" y="86" text-anchor="middle" font-family="monospace" font-size="8" fill="#8a5a30" stroke="none">11:43</text>`),
+onionbottle: artWrap(`
+  <rect x="54" y="20" width="12" height="26" rx="3" fill="#2e5c3f"/>
+  <rect x="51" y="18" width="18" height="7" rx="3" fill="#3d7452"/>
+  <circle cx="60" cy="72" r="30" fill="#2e5c3f"/>
+  <ellipse cx="50" cy="62" rx="7" ry="12" fill="#4a8a63" opacity=".8" stroke="none" transform="rotate(-18 50 62)"/>
+  <path d="M40,96 Q60,102 80,96" fill="none" stroke-width="2" opacity=".5"/>`),
+sunkencity: artWrap(`
+  <path d="M16,92 Q40,84 62,92 Q86,100 104,92 L104,104 L16,104 Z" fill="#d9c78f"/>
+  <path d="M34,90 L38,44 L70,40 L74,86 Z" fill="#a39a8a" transform="rotate(-7 54 66)"/>
+  <g stroke="#2b2118" stroke-width="2" transform="rotate(-7 54 66)">
+    <rect x="44" y="50" width="8" height="8" fill="#5a5650"/>
+    <rect x="58" y="48" width="8" height="8" fill="#5a5650"/>
+    <rect x="44" y="64" width="8" height="8" fill="#5a5650"/>
+    <rect x="58" y="62" width="8" height="8" fill="#5a5650"/>
+  </g>
+  <path d="M22,88 q4,-14 0,-24 M28,90 q3,-10 0,-16" fill="none" stroke="#3d7452" stroke-width="3.5"/>
+  <path d="M84,70 q4,-4 8,0 q-4,4 -8,0 Z" fill="#ff6ba8" stroke-width="2"/>
+  <circle cx="91" cy="69" r="1" fill="#2b2118" stroke="none"/>
+  <circle cx="82" cy="46" r="2.5" fill="none" stroke="#7ec4e8" stroke-width="1.5"/>
+  <circle cx="88" cy="36" r="1.8" fill="none" stroke="#7ec4e8" stroke-width="1.5"/>`),
+anchor: artWrap(`
+  <circle cx="60" cy="24" r="7" fill="none" stroke-width="4"/>
+  <path d="M60,31 L60,84" stroke-width="6"/>
+  <path d="M42,44 L78,44" stroke-width="5"/>
+  <path d="M60,84 Q38,84 30,64 L24,70 L26,54 L40,58 L34,62 Q42,76 60,78 Q78,76 86,62 L80,58 L94,54 L96,70 L90,64 Q82,84 60,84 Z" fill="#5a5650"/>
+  <path d="M74,26 Q86,20 92,30 Q84,34 76,32" fill="#c96f3f" stroke-width="2.5"/>
+  <circle cx="34" cy="90" r="2.5" fill="none" stroke="#7ec4e8" stroke-width="1.5"/>`),
+seaventure: artWrap(`
+  <path d="M24,74 L96,74 L86,94 L36,94 Z" fill="#8a5a30"/>
+  <path d="M28,74 L92,74" stroke-width="2" opacity=".5"/>
+  <path d="M46,74 L46,28 M74,74 L74,36" stroke-width="4"/>
+  <path d="M46,30 Q28,40 46,56 Z" fill="#f3e6c8"/>
+  <path d="M46,30 Q66,42 46,58 Z" fill="#fffaef"/>
+  <path d="M74,38 Q60,46 74,60 Z" fill="#f3e6c8"/>
+  <path d="M74,38 Q88,48 74,60 Z" fill="#fffaef"/>
+  <path d="M46,28 L58,30 L46,34 Z" fill="#c14b32"/>
+  <path d="M14,94 Q30,88 46,94 Q62,100 78,94 Q94,88 106,94" fill="none" stroke="#4f9aa6" stroke-width="3.5"/>`),
+trianglecase: artWrap(`
+  <path d="M22,34 L52,34 L58,42 L98,42 L98,96 L22,96 Z" fill="#c9a25a"/>
+  <rect x="30" y="30" width="60" height="58" rx="3" fill="#fffaef" transform="rotate(-4 60 60)"/>
+  <g transform="rotate(-4 60 60)">
+    <path d="M60,40 L78,72 L42,72 Z" fill="none" stroke-width="3"/>
+    <path d="M46,80 h28" stroke-width="2" opacity=".5"/>
+  </g>
+  <circle cx="76" cy="72" r="14" fill="none" stroke-width="4"/>
+  <circle cx="76" cy="72" r="14" fill="#7ec4e8" opacity=".25" stroke="none"/>
+  <path d="M86,82 L98,94" stroke-width="6"/>
+  <path d="M52,56 l5,6 l9,-11" stroke="#3c8f4e" stroke-width="5" fill="none"/>`)
+});
+
+/* ---------------- companions ---------------- */
+function diveGear(cx, cy, w){
+  // goggles + snorkel positioned over a face centered at (cx,cy), w = mask width
+  return `
+    <rect x="${cx-w/2}" y="${cy-9}" width="${w}" height="19" rx="9" fill="#bfe8f2" opacity=".88" stroke-width="2.5"/>
+    <path d="M${cx-w/2},${cy} q-8,-2 -10,2 M${cx+w/2},${cy} q8,-2 10,2" stroke-width="2.5" fill="none"/>
+    <path d="M${cx+w/2+4},${cy-2} q10,-4 10,-18 q0,-6 5,-6" fill="none" stroke="#ff8c42" stroke-width="5"/>`;
+}
+function cleoSVG(pose, dive){
+  const eyes = pose==="happy"
+    ? `<path d="M46,40 q4,-5 8,0 M62,40 q4,-5 8,0" fill="none" stroke-width="3"/>`
+    : `<path d="M47,38 q3,4 6,0 M63,38 q3,4 6,0" fill="none" stroke-width="3"/>
+       <circle cx="50" cy="39" r="2.6" fill="#2b2118" stroke="none"/><circle cx="66" cy="39" r="2.6" fill="#2b2118" stroke="none"/>`;
+  const mark = pose==="alert" ? `<text x="96" y="26" font-size="26" font-weight="bold" fill="#ffb02e" stroke="#2b2118" stroke-width="1">!</text>` : "";
+  return `<svg viewBox="0 0 112 104" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="56" cy="98" rx="32" ry="5" fill="#000" opacity=".15"/>
+    <g stroke="#2b2118" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M84,92 Q102,88 98,68 Q96,60 90,66" fill="none" stroke-width="6" stroke="#d9b26a"/>
+      <path d="M36,96 Q32,72 46,64 L68,64 Q84,70 80,96 Z" fill="#e8c987"/>
+      <path d="M38,26 L34,10 L48,18 Z" fill="#e8c987"/>
+      <path d="M74,26 L78,10 L64,18 Z" fill="#e8c987"/>
+      <path d="M40,14 L38,11 L45,16 Z" fill="#ff9db8" stroke-width="1.5"/>
+      <circle cx="56" cy="38" r="24" fill="#f0d9a0"/>
+      ${eyes}
+      <path d="M52,47 L56,50 L60,47 Z" fill="#ff9db8" stroke-width="2"/>
+      <path d="M56,50 L56,54 M52,56 Q56,59 60,56" fill="none" stroke-width="2"/>
+      <path d="M32,44 L44,46 M32,52 L44,51 M80,44 L68,46 M80,52 L68,51" stroke-width="1.8"/>
+      <path d="M42,62 L70,62" stroke="#e8b73a" stroke-width="7"/>
+      <circle cx="56" cy="66" r="4" fill="#3ddad7"/>
+      ${dive?diveGear(56,38,44):""}
+    </g>${mark}
+  </svg>`;
+}
+function picoSVG(pose, dive){
+  const eye = pose==="happy"
+    ? `<path d="M60,34 q4,-5 8,0" fill="none" stroke-width="3"/>`
+    : `<circle cx="64" cy="34" r="3.2" fill="#2b2118" stroke="none"/><circle cx="65" cy="33" r="1" fill="#fff" stroke="none"/>`;
+  const wing = pose==="alert"
+    ? `<path d="M44,58 Q20,44 26,26 Q40,34 50,48 Z" fill="#3c8f4e"/>`
+    : `<path d="M42,60 Q28,66 30,84 Q46,80 52,68 Z" fill="#3c8f4e"/>`;
+  const mark = pose==="alert" ? `<text x="94" y="26" font-size="26" font-weight="bold" fill="#ffb02e" stroke="#2b2118" stroke-width="1">!</text>` : "";
+  return `<svg viewBox="0 0 112 104" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="56" cy="98" rx="26" ry="5" fill="#000" opacity=".15"/>
+    <g stroke="#2b2118" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M46,88 Q30,96 24,92 Q34,84 44,80 Z" fill="#3f6bb5"/>
+      <path d="M56,20 Q80,18 82,44 Q84,74 62,90 Q44,96 42,76 Q40,44 56,20 Z" fill="#e0533a"/>
+      ${wing}
+      <path d="M66,42 Q80,44 78,54 Q70,52 64,48 Z" fill="#f3e6c8"/>
+      <path d="M72,28 Q88,28 84,40 Q76,42 70,36 Z" fill="#ffc233"/>
+      ${eye}
+      <path d="M52,96 L52,88 M60,96 L60,88" stroke-width="3.5" stroke="#ffc233"/>
+      ${dive?diveGear(64,34,26):""}
+    </g>${mark}
+  </svg>`;
+}
+function bubblesSVG(pose, dive){
+  const eyes = pose==="happy"
+    ? `<path d="M78,38 q4,-5 8,0" fill="none" stroke-width="3"/>`
+    : `<circle cx="82" cy="38" r="3" fill="#2b2118" stroke="none"/><circle cx="83" cy="37" r="1" fill="#fff" stroke="none"/>`;
+  const mark = pose==="alert" ? `<text x="100" y="24" font-size="26" font-weight="bold" fill="#ffb02e" stroke="#2b2118" stroke-width="1">!</text>` : "";
+  return `<svg viewBox="0 0 112 104" xmlns="http://www.w3.org/2000/svg">
+    <ellipse cx="56" cy="98" rx="34" ry="5" fill="#000" opacity=".15"/>
+    <g stroke="#2b2118" stroke-width="3" stroke-linejoin="round" stroke-linecap="round">
+      <path d="M18,74 Q16,44 46,40 Q76,38 80,64 Q82,84 56,88 Q24,90 18,74 Z" fill="#3c8f4e"/>
+      <g stroke-width="2" fill="#6fae8f">
+        <path d="M34,52 h14 v12 h-14 Z M52,48 h14 v12 h-14 Z M40,68 h14 v10 h-14 Z"/>
+      </g>
+      <circle cx="82" cy="42" r="15" fill="#8ac48f"/>
+      ${eyes}
+      <path d="M86,48 Q90,50 92,47" fill="none" stroke-width="2"/>
+      <path d="M28,86 Q20,94 28,96 Q36,94 36,88 M62,88 Q60,98 70,96 Q76,92 72,86" fill="#8ac48f" stroke-width="2.5"/>
+      ${dive?`<circle cx="100" cy="26" r="3" fill="none" stroke="#7ec4e8" stroke-width="1.5"/><circle cx="104" cy="16" r="2" fill="none" stroke="#7ec4e8" stroke-width="1.5"/>`:""}
+      ${dive?diveGear(82,38,26):""}
+    </g>${mark}
+  </svg>`;
+}
+function avatarSVG(species, pose, dive){
+  if(species==="cat") return cleoSVG(pose, dive);
+  if(species==="parrot") return picoSVG(pose, dive);
+  if(species==="turtle") return bubblesSVG(pose, dive);
+  return scoutSVG(pose, dive);
+}
 
 const GRID_COLS = 5, GRID_ROWS = 5;
 const FRAGS_PER_ARTIFACT = 3;
@@ -1099,6 +1406,59 @@ const EXTRA_QS = {
       choices:["Pocket-sized","Child-sized","Larger than life"], answer:2 },
     { prompt:"Where do many of the finest surviving ancient bronze statues come from?",
       choices:["The bottom of the sea, in shipwrecks","The tops of volcanoes","Secret desert caves"], answer:0 }
+  ]  ,telegraph:[
+    { prompt:"In what year did the Titanic sink?",
+      choices:["1912","1985","1692"], answer:0 },
+    { prompt:"How is the Titanic's wreck treated today?",
+      choices:["As a theme park","As a protected memorial","As a scrap-metal yard"], answer:1 }
+  ],
+  porthole:[
+    { prompt:"Who led the team that found the Titanic's wreck in 1985?",
+      choices:["Howard Carter","Greek sponge divers","Robert Ballard and Jean-Louis Michel"], answer:2 },
+    { prompt:"About how deep does the Titanic rest?",
+      choices:["3,800 meters (12,500 feet)","38 meters — a quick swim","No one has ever measured it"], answer:0 }
+  ],
+  rusticle:[
+    { prompt:"What did scientists name the new bacterium found on the wreck?",
+      choices:["Bacterius maximus","Halomonas titanicae","Rusticus icebergi"], answer:1 },
+    { prompt:"What are the rusticle bacteria slowly doing to the ship?",
+      choices:["Polishing it shiny","Keeping it warm","Eating away its iron"], answer:2 }
+  ],
+  stoppedwatch:[
+    { prompt:"What happened to much of Port Royal in 1692?",
+      choices:["It sank beneath the sea in an earthquake","It was carried off by pirates","It floated out into the ocean"], answer:0 },
+    { prompt:"When did the earthquake strike Port Royal?",
+      choices:["April 15, 1912","June 7, 1692","September 1, 1985"], answer:1 }
+  ],
+  onionbottle:[
+    { prompt:"Who famously used Port Royal as a haven?",
+      choices:["Pirates and privateers","Roman emperors","Maya astronomers"], answer:0 },
+    { prompt:"What everyday objects have divers recovered from Port Royal?",
+      choices:["Television sets","Onion bottles, clay pipes, and pewter mugs","Plastic toys"], answer:1 }
+  ],
+  sunkencity:[
+    { prompt:"What can archaeologists swim along at Port Royal?",
+      choices:["Actual streets from the 1600s","A modern shopping mall","Ancient Egyptian temples"], answer:0 },
+    { prompt:"What covered the city so quickly that it was preserved?",
+      choices:["Volcanic ash","Ice and snow","Sand and water"], answer:2 }
+  ],
+  anchor:[
+    { prompt:"What is Bermuda often called?",
+      choices:["The shipwreck capital of the Atlantic","The island of lost socks","The quietest place on Earth"], answer:0 },
+    { prompt:"How are Bermuda's shipwrecks treated today?",
+      choices:["Sold for parts","Protected and studied like underwater museums","Ignored completely"], answer:1 }
+  ],
+  seaventure:[
+    { prompt:"What happened to the Sea Venture in 1609?",
+      choices:["A storm drove it onto Bermuda's reefs","It vanished mysteriously forever","It sailed around the world twice"], answer:0 },
+    { prompt:"What did the castaways build their new ships from?",
+      choices:["Whale bones","Bermuda cedar and pieces of the wreck","Palm leaves and rope"], answer:1 }
+  ],
+  trianglecase:[
+    { prompt:"What do Lloyd's of London insurance experts charge extra for sailing through the Triangle?",
+      choices:["Double the normal price","A treasure chest of gold","Nothing extra at all"], answer:2 },
+    { prompt:"What wins when we check spooky stories carefully?",
+      choices:["Evidence — real investigation beats rumors","Aliens","Sea monsters"], answer:0 }
   ]
 };
 function allQs(art){ return [art.q].concat(EXTRA_QS[art.id]||[]); }
@@ -1121,15 +1481,50 @@ const QUESTS = [
   { id:"leader",  emoji:"🚩", name:"Site Leader",
     desc:"Certify every find at any one dig site.", kind:"site" },
   { id:"master",  emoji:"🏆", name:"Master Archaeologist",
-    desc:"Certify every artifact in the world.", kind:"all" }
+    desc:"Certify every artifact in the world.", kind:"all" },
+  { id:"diver",   emoji:"🤿", name:"Deep-Sea Certified",
+    desc:"Certify every treasure from the three dive sites.",
+    kind:"ids", ids:["telegraph","porthole","rusticle","stoppedwatch","onionbottle","sunkencity","anchor","seaventure","trianglecase"] },
+  { id:"mythbust", emoji:"🔍", name:"Myth Buster",
+    desc:"Close the case on the Bermuda Triangle with real evidence.",
+    kind:"ids", ids:["trianglecase"] },
+  { id:"survivor", emoji:"⛵", name:"The Castaway Story",
+    desc:"Recover the tale of the Sea Venture's unsinkable crew.",
+    kind:"ids", ids:["seaventure"] }
 ];
+
+function completedSites(){ return SITES.filter(s=>foundCount(s)===s.artifacts.length).length; }
+const COMPANIONS = [
+  { id:"dog", species:"dog", fixedName:null,
+    role:"Artifact Detection Dog",
+    unlock:()=>true, how:"" },
+  { id:"cleo", species:"cat", fixedName:"Cleo",
+    role:"Temple Cat — ancient Egyptians truly adored cats!",
+    unlock:()=>completedSites()>=3, how:"Complete 3 sites" },
+  { id:"bubbles", species:"turtle", fixedName:"Bubbles",
+    role:"Dive Buddy — resting sea turtles really can hold their breath for hours!",
+    unlock:()=>SITES.some(s=>s.type==="dive" && foundCount(s)===s.artifacts.length), how:"Complete any dive site" },
+  { id:"pico", species:"parrot", fixedName:"Pico",
+    role:"Ship's Lookout — sailors really did keep parrots on long voyages!",
+    unlock:()=>completedSites()>=6, how:"Complete 6 sites" }
+];
+function compById(id){ return COMPANIONS.find(c=>c.id===id) || COMPANIONS[0]; }
+function activeComp(){ return compById(state.activeComp); }
+function compName(c){ return c.fixedName || state.dogName; }
+const VOICE = {
+  dog:    { yay:"WOOF!",      sniffline:"*SNIFF SNIFF SNIFF*... THERE!! Something's under the <b>glowing square</b>! (Real detection dogs find buried sites by smell — my nose is science!)" },
+  cat:    { yay:"Purrrfect!", sniffline:"*whiskers twitch*... THERE. Something hides beneath the <b>glowing square</b>. (Cats sense the tiniest movements — trust the whiskers.)" },
+  parrot: { yay:"SQUAWK!",    sniffline:"SQUAWK! My lookout eyes spot something under the <b>glowing square</b>! (Sailors trusted sharp-eyed lookouts — and nobody's sharper than ME.)" },
+  turtle: { yay:"Cowabunga!", sniffline:"Whoa... I feel it in my flippers, dude. Check the <b>glowing square</b>. (Sea turtles are amazing navigators of the ocean floor.)" }
+};
 
 const RANKS = [
   { name:"Rookie Digger",   emoji:"🥾", xp:0 },
   { name:"Field Agent",     emoji:"🧭", xp:150 },
   { name:"Trench Boss",     emoji:"⛏️", xp:350 },
   { name:"Site Leader",     emoji:"🚩", xp:600 },
-  { name:"Museum Legend",   emoji:"🏛️", xp:900 }
+  { name:"Museum Legend",   emoji:"🏛️", xp:900 },
+  { name:"Abyss Explorer",  emoji:"🤿", xp:1250 }
 ];
 const XP_FRAGMENT = 5, XP_CERTIFY = 25, XP_QUEST = 50;
 
@@ -1150,8 +1545,12 @@ const state = {
   lastPos:null,
   museumBack:"map",
   grandOpened:false,
+  oceanOpened:false,
   bestStreak:0,
-  quiz:null
+  quiz:null,
+  activeComp:"dog",
+  compCelebrated:{},
+  toldTeam:false
 };
 
 function foundCount(site){ return site.artifacts.filter(a=>state.found[a.id]).length; }
@@ -1191,15 +1590,21 @@ function dogSay(pose, html){
     if(bub){ bub.classList.remove("flash"); void bub.offsetWidth; bub.classList.add("flash"); }
   }
   if(av){
-    av.innerHTML = scoutSVG(pose);
+    const c = activeComp();
+    av.innerHTML = avatarSVG(c.species, pose, isDiveScreen());
     av.classList.remove("bounce"); void av.offsetWidth; av.classList.add("bounce");
   }
 }
 function pick(arr){ return arr[Math.floor(Math.random()*arr.length)]; }
+function isDiveScreen(){
+  if(state.screen!=="dig" || !state.siteId) return false;
+  const s = SITES.find(x=>x.id===state.siteId);
+  return !!(s && s.type==="dive");
+}
 const LINES = {
   fragFound:[
     "*GASP* A piece of <b>find {n}</b>! {got} of {tot} dug up — sniff out <b>{left} more</b> with the matching colour!",
-    "WOOF! That's <b>find {n}</b>! {got} of {tot}! My tail is going CRAZY. <b>{left} to go!</b>",
+    "{yay} That's <b>find {n}</b>! {got} of {tot}! <b>{left} to go!</b>",
     "Ooh ooh OOH — <b>find {n}</b>, piece {got} of {tot}! The other {left} smell close by..."
   ],
   fragDone:[
@@ -1249,7 +1654,9 @@ const LINES = {
 };
 function line(key, vars){
   let t = pick(LINES[key]);
-  if(vars) for(const k of Object.keys(vars)) t = t.split("{"+k+"}").join(vars[k]);
+  vars = vars || {};
+  vars.yay = VOICE[activeComp().species].yay;
+  for(const k of Object.keys(vars)) t = t.split("{"+k+"}").join(vars[k]);
   return t;
 }
 
@@ -1287,7 +1694,9 @@ function saveProgress(){
     localStorage.setItem(SAVE_KEY, JSON.stringify({
       found: state.found, celebrated: state.celebrated,
       xp: state.xp, dogName: state.dogName, seenIntro: state.seenIntro,
-      muted: state.muted, grandOpened: state.grandOpened, bestStreak: state.bestStreak
+      muted: state.muted, grandOpened: state.grandOpened, bestStreak: state.bestStreak,
+      oceanOpened: state.oceanOpened, activeComp: state.activeComp,
+      compCelebrated: state.compCelebrated, toldTeam: state.toldTeam
     }));
   }catch(e){}
 }
@@ -1315,15 +1724,26 @@ function loadProgress(){
       state.seenIntro = !!data.seenIntro || totalFound() > 0; // veterans skip the intro
       state.muted = !!data.muted;
       state.grandOpened = !!data.grandOpened || totalFound() === totalArtifacts(); // no stale ceremony on reload
+      state.oceanOpened = !!data.oceanOpened || SITES.filter(s=>s.type==="dive").every(s=>foundCount(s)===s.artifacts.length);
       if(typeof data.bestStreak === "number" && data.bestStreak >= 0 && data.bestStreak < 10000) state.bestStreak = data.bestStreak;
+      if(typeof data.activeComp === "string" && COMPANIONS.some(c=>c.id===data.activeComp)) state.activeComp = data.activeComp;
+      if(data.compCelebrated && typeof data.compCelebrated === "object"){
+        for(const id of Object.keys(data.compCelebrated)){
+          if(COMPANIONS.some(c=>c.id===id) && data.compCelebrated[id]===true) state.compCelebrated[id]=true;
+        }
+      }
+      state.toldTeam = !!data.toldTeam;
     }
   }catch(e){}
   QUESTS.forEach(q=>{ if(questDone(q)) state.celebrated[q.id] = true; });
+  COMPANIONS.forEach(c=>{ if(c.unlock()) state.compCelebrated[c.id] = true; });
+  if(!COMPANIONS.find(c=>c.id===activeComp().id).unlock()) state.activeComp = "dog";
 }
 function resetProgress(){
   try{ localStorage.removeItem(SAVE_KEY); }catch(e){}
   state.found = {}; state.celebrated = {}; state.xp = 0; state.seenIntro = false;
-  state.grandOpened = false; state.bestStreak = 0;
+  state.grandOpened = false; state.oceanOpened = false; state.bestStreak = 0;
+  state.activeComp = "dog"; state.compCelebrated = {}; state.toldTeam = false;
   state.screen = "title"; render();
 }
 
@@ -1418,7 +1838,10 @@ const SITE_LINKS = {
   pompeii:     { url:"https://whc.unesco.org/en/list/829/", label:"UNESCO — Pompeii & Herculaneum" },
   xian:        { url:"https://whc.unesco.org/en/list/441/", label:"UNESCO — Mausoleum of the First Qin Emperor" },
   tikal:       { url:"https://whc.unesco.org/en/list/64/",  label:"UNESCO — Tikal National Park" },
-  antikythera: { url:"https://kids.britannica.com/kids/article/Antikythera-mechanism/471420", label:"Britannica Kids — the Antikythera mechanism" }
+  antikythera: { url:"https://kids.britannica.com/kids/article/Antikythera-mechanism/471420", label:"Britannica Kids — the Antikythera mechanism" },
+  titanic:     { url:"https://oceantoday.noaa.gov/titanicwrecksite/", label:"NOAA Ocean Today — the Titanic wrecksite" },
+  portroyal:   { url:"https://www.britannica.com/place/Port-Royal-Jamaica", label:"Britannica — Port Royal, Jamaica" },
+  bermuda:     { url:"https://oceanservice.noaa.gov/facts/bermudatri.html", label:"NOAA — What is the Bermuda Triangle?" }
 };
 function learnBlock(siteId){
   const L = SITE_LINKS[siteId];
@@ -1436,7 +1859,10 @@ const SITE_GEO = {
   pompeii:     { lat:40.75, lon:14.5  },
   antikythera: { lat:35.9,  lon:23.3  },
   xian:        { lat:34.3,  lon:108.9 },
-  tikal:       { lat:17.2,  lon:-89.6 }
+  tikal:       { lat:17.2,  lon:-89.6 },
+  titanic:     { lat:41.73, lon:-49.95 },
+  portroyal:   { lat:17.94, lon:-76.84 },
+  bermuda:     { lat:32.31, lon:-64.75 }
 };
 const HQ_POS = { x:500, y:107 };
 function sitePos(id){
@@ -1444,7 +1870,8 @@ function sitePos(id){
   return { x:(g.lon+180)/360*1000, y:(90-g.lat)/180*500 };
 }
 const PIN_LABEL_OFF = {
-  tikal:[0,-16], pompeii:[-20,-8], antikythera:[16,16], egypt:[20,4], xian:[0,-16]
+  tikal:[0,-16], pompeii:[-20,-8], antikythera:[16,16], egypt:[20,4], xian:[0,-16],
+  titanic:[0,-16], portroyal:[20,14], bermuda:[18,-12]
 };
 
 let traveling = false;
@@ -1465,7 +1892,8 @@ function travelTo(siteId){
     svg.appendChild(trail);
     const plane = document.createElementNS(NS, "text");
     plane.setAttribute("class","plane");
-    plane.textContent = "✈️";
+    const destSite = SITES.find(s=>s.id===siteId);
+    plane.textContent = (destSite && destSite.type==="dive") ? "🚢" : "✈️";
     plane.setAttribute("text-anchor","middle");
     svg.appendChild(plane);
     const pts = [];
@@ -1508,8 +1936,8 @@ function renderWorldMap(){
     const ly = above ? p.y - 66 : p.y + 20;
     pins += `
       <g class="pin-g" data-site="${s.id}" role="button" tabindex="0" aria-label="${esc(s.name)}, ${esc(s.where)}">
-        <circle class="pin-ring ${d?"done":""}" cx="${p.x}" cy="${p.y}" r="11"/>
-        <circle class="pin-dot ${d?"done":""}" cx="${p.x}" cy="${p.y}" r="8"/>
+        <circle class="pin-ring ${s.type==="dive"?"dive":""} ${d?"done":""}" cx="${p.x}" cy="${p.y}" r="11"/>
+        <circle class="pin-dot ${s.type==="dive"?"dive":""} ${d?"done":""}" cx="${p.x}" cy="${p.y}" r="8"/>
         <text class="pin-num" x="${p.x+ox}" y="${p.y+oy+6}" text-anchor="middle">${d?"✓":i+1}</text>
         <circle class="pin-hit" cx="${p.x}" cy="${p.y}" r="26"/>
         <g class="pin-label">
@@ -1596,7 +2024,7 @@ function sniff(){
     el.classList.add("sniffed");
     setTimeout(()=>el.classList.remove("sniffed"), 2600);
   }
-  dogSay("sniff", "*SNIFF SNIFF SNIFF*... THERE!! Something's buried under the <b>glowing square</b>! (Real detection dogs help archaeologists find buried sites by smell — my nose is science!)");
+  dogSay("sniff", VOICE[activeComp().species].sniffline);
 }
 
 function digTile(idx, el){
@@ -1650,13 +2078,13 @@ function digTile(idx, el){
       }
     }else{
       SFX.dig();
-      burst(el, "#a86c3c", 6);
+      burst(el, isDiveScreen() ? "#7ec4e8" : "#a86c3c", 6);
       dogSay("sniff", line("halfDug"));
       render();
     }
   }else{
     SFX.dig();
-    burst(el, "#8a5a30", 7);
+    burst(el, isDiveScreen() ? "#7ec4e8" : "#8a5a30", 7);
     const leftAfter = ()=>fragmentsLeft();
     if(state.tool==="brush"){
       t.depth--;
@@ -1675,6 +2103,7 @@ let modal = null;
 const discoveryQueue = [];
 const questQueue = [];
 const rankQueue = [];
+const compQueue = [];
 
 function openDiscovery(art){
   if(modal){ discoveryQueue.push(art); return; }
@@ -1686,6 +2115,11 @@ function closeModal(){
   if(discoveryQueue.length){ openDiscovery(discoveryQueue.shift()); return; }
   if(questQueue.length){ modal = { quest: questQueue.shift() }; SFX.quest(); render(); return; }
   if(rankQueue.length){ modal = { rank: rankQueue.shift() }; SFX.rankup(); render(); return; }
+  if(compQueue.length){ modal = { newcomp: compQueue.shift() }; SFX.quest(); render(); return; }
+  if(SITES.filter(s=>s.type==="dive").every(s=>foundCount(s)===s.artifacts.length) && !state.oceanOpened){
+    state.oceanOpened = true; saveProgress();
+    modal = { ocean:true }; SFX.quest(); render(); return;
+  }
   if(totalFound() === totalArtifacts() && !state.grandOpened){
     state.grandOpened = true; saveProgress();
     modal = { grand:true }; SFX.quest(); render(); return;
@@ -1708,6 +2142,13 @@ function pickChoice(i, btn){
         questQueue.push(q);
       }
     });
+    COMPANIONS.forEach(c=>{
+      if(!state.compCelebrated[c.id] && c.unlock()){
+        state.compCelebrated[c.id] = true;
+        state.toldTeam = true;
+        compQueue.push(c);
+      }
+    });
     addXP(XP_CERTIFY, btn);
     saveProgress();
     SFX.correct();
@@ -1719,7 +2160,7 @@ function pickChoice(i, btn){
     modal.wrongPicks.add(i);
     btn.classList.add("wrong");
     const note = document.getElementById("quiznote");
-    if(note) note.innerHTML = "🐕 " + line("wrongAnswer");
+    if(note) note.innerHTML = line("wrongAnswer");
   }
 }
 
@@ -1742,17 +2183,37 @@ function render(){
     else if(modal.rank) app.append(renderRankModal());
     else if(modal.exhibit) app.append(renderExhibitModal());
     else if(modal.grand) app.append(renderGrandModal());
+    else if(modal.ocean) app.append(renderOceanModal());
+    else if(modal.newcomp) app.append(renderCompModal());
     else if(modal.popquiz) app.append(renderPopQuizModal());
     else app.append(renderModal());
   }
 }
 
 function scoutRow(){
+  const c = activeComp();
   return `
     <div class="scout-row">
-      <div class="scout-avatar" id="scout-av">${scoutSVG(state.pose)}</div>
-      <div class="bubble"><span class="who">${esc(state.dogName)} says</span><span id="bubble-text">${state.tip||""}</span></div>
+      <div class="scout-avatar" id="scout-av">${avatarSVG(c.species, state.pose, isDiveScreen())}</div>
+      <div class="bubble"><span class="who">${esc(compName(c))} says</span><span id="bubble-text">${state.tip||""}</span></div>
     </div>`;
+}
+function teamRow(){
+  const unlockedCount = COMPANIONS.filter(c=>c.unlock()).length;
+  if(unlockedCount<=1) return "";
+  let chips = "";
+  COMPANIONS.forEach(c=>{
+    const un = c.unlock();
+    if(un){
+      chips += `<button class="team-chip ${state.activeComp===c.id?"active":""}" data-comp="${c.id}" aria-label="switch to ${esc(compName(c))}">
+        <span class="t-av">${avatarSVG(c.species, "idle", false)}</span>
+        <span class="t-name">${esc(compName(c))}</span></button>`;
+    }else{
+      chips += `<button class="team-chip locked" data-locked="${esc(c.how)}" aria-label="locked companion">
+        <span class="t-lock">🔒</span><span class="t-name">???</span></button>`;
+    }
+  });
+  return `<div class="team-row" id="teamrow">${chips}</div>`;
 }
 function rankChip(){
   const r = rankOf(state.xp), nx = nextRank(state.xp);
@@ -1812,7 +2273,7 @@ function renderIntro(){
       <h3 style="text-align:center">Now listen up, rookie!</h3>
       <div class="fact"><span class="fact-label">${esc(state.dogName)}'s mission briefing</span>
       The museum's <b>Grand Exhibit</b> opens soon and the halls are EMPTY. We need treasures —
-      <b>15 real artifacts</b> from <b>5 real places</b> around the world. Dig them up, learn the true story
+      <b>${totalArtifacts()} real artifacts</b> from <b>${SITES.length} real places</b> around the world. Dig them up, learn the true story
       behind each one, and fill that museum. Ready? My tail says you're ready. <b>LET'S DIG!</b></div>
       <div class="actions"><button class="btn-main" id="next">LET'S DIG! 🐾</button></div>`;
   }
@@ -1840,7 +2301,16 @@ function renderIntro(){
 
 function renderMap(){
   const done = totalFound(), total = totalArtifacts();
-  if(!state.tip || state.screen!=="map"){ state.tip = line("mapHello"); state.pose = "idle"; }
+  if(!state.tip || state.screen!=="map"){
+    const newTeam = COMPANIONS.filter(c=>c.unlock()).length>1 && !state.toldTeam;
+    if(newTeam){
+      state.tip = "BIG NEWS — new teammates have joined the expedition! Tap a face below to switch who explores with you.";
+      state.pose = "alert";
+      state.toldTeam = true; saveProgress();
+    }else{
+      state.tip = line("mapHello"); state.pose = "idle";
+    }
+  }
   const frag = h(`
     <div>
       <div class="topbar">
@@ -1853,6 +2323,7 @@ function renderMap(){
       ${rankChip()}
       <div id="mapslot"></div>
       ${scoutRow()}
+      ${teamRow()}
       <div class="sites" id="sites" style="margin-top:13px"></div>
       ${done===total ? `
         <div class="master-banner">
@@ -1889,6 +2360,26 @@ function renderMap(){
   frag.getElementById("museum").onclick = ()=>{ state.museumBack="map"; state.screen="museum"; render(); };
   frag.getElementById("quests").onclick = ()=>{ state.screen="quests"; render(); };
   frag.getElementById("mute").onclick = ()=>{ state.muted=!state.muted; saveProgress(); render(); };
+  const tr = frag.getElementById("teamrow");
+  if(tr){
+    tr.querySelectorAll(".team-chip").forEach(chip=>{
+      chip.onclick = ()=>{
+        ac();
+        if(chip.dataset.comp){
+          state.activeComp = chip.dataset.comp;
+          saveProgress();
+          SFX.clink();
+          const c = activeComp();
+          state.tip = `${VOICE[c.species].yay} ${esc(compName(c))} reporting for duty — ${esc(c.role)}`;
+          state.pose = "happy";
+          render();
+        }else{
+          SFX.nope();
+          dogSay("idle", "That teammate isn't here yet. <b>"+chip.dataset.locked+"</b> to recruit them!");
+        }
+      };
+    });
+  }
   return frag;
 }
 
@@ -1941,7 +2432,7 @@ function renderDig(){
       </div>
       <div class="dig-head">
         <h2>${site.emoji} ${esc(site.name)}</h2>
-        <p>${esc(site.where)} · Excavation Trench A</p>
+        <p>${esc(site.where)} · ${site.type==="dive" ? "Seabed Grid A" : "Excavation Trench A"}</p>
       </div>
       <div class="frag-tracker" id="tracker"></div>
       <div class="grid" id="grid"></div>
@@ -1967,8 +2458,9 @@ function renderDig(){
     }
   });
   const grid = frag.getElementById("grid");
+  const diveCls = site.type==="dive" ? " dive" : "";
   d.tiles.forEach((t,i)=>{
-    let cls="tile", label="", extra="";
+    let cls="tile"+diveCls, label="", extra="";
     if(t.revealed){
       const n = artIndex(site, t.artifact) + 1;
       const col = fragColor(site, t.artifact);
@@ -2097,6 +2589,47 @@ function renderExhibitModal(){
   return frag;
 }
 
+function renderCompModal(){
+  const c = modal.newcomp;
+  const frag = h(`
+    <div class="overlay"><div class="card">
+      <div class="stampwrap">
+        <span class="eyebrow">New teammate recruited!</span>
+        <h3>${esc(compName(c))} joins the expedition!</h3>
+        <span class="stamp slam">Welcome</span>
+      </div>
+      <div class="intro-scout">${avatarSVG(c.species, "happy", false)}</div>
+      <div class="fact"><span class="fact-label">${esc(compName(c))} says hello</span>
+      ${VOICE[c.species].yay} I'm your new <b>${esc(c.role)}</b> Switch to me any time from the team row on the map!</div>
+      <div class="actions"><button class="btn-main" id="close">Welcome aboard!</button></div>
+    </div></div>
+  `);
+  frag.getElementById("close").onclick = closeModal;
+  return frag;
+}
+
+function renderOceanModal(){
+  setTimeout(()=>{
+    const card = document.querySelector(".card");
+    if(card){ burst(card, "#3ddad7", 18); burst(card, "#7ec4e8", 14); }
+  }, 250);
+  const frag = h(`
+    <div class="overlay"><div class="card">
+      <div class="stampwrap">
+        <span class="eyebrow">A whole new wing</span>
+        <h3>🌊 THE OCEAN WING IS OPEN! 🌊</h3>
+        <span class="stamp slam">Ocean Wing</span>
+      </div>
+      <div class="fact"><span class="fact-label">The museum board is amazed</span>
+      Every dive-site treasure is recovered and on display — the Titanic's story, the sunken pirate city,
+      and one thoroughly BUSTED myth. You didn't just explore the ocean floor... you brought back the truth.</div>
+      <div class="actions"><button class="btn-main" id="close">Amazing!</button></div>
+    </div></div>
+  `);
+  frag.getElementById("close").onclick = closeModal;
+  return frag;
+}
+
 function renderGrandModal(){
   // celebratory bursts around the screen
   setTimeout(()=>{
@@ -2112,7 +2645,7 @@ function renderGrandModal(){
       </div>
       <div class="intro-scout">${scoutSVG("happy")}</div>
       <div class="fact"><span class="fact-label">${esc(state.dogName)} can't stop wagging</span>
-      Every hall is FULL. Fifteen real treasures, fifteen true stories, and one unstoppable
+      Every hall is FULL. ${totalArtifacts()} real treasures, ${totalArtifacts()} true stories, and one unstoppable
       archaeologist (plus one very good dog). People are lining up around the block!
       Think you can remember everything you learned? Come find me in the museum for a <b>🎓 Pop Quiz</b> —
       let's see how long a streak you can build!</div>
