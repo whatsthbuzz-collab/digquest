@@ -352,18 +352,6 @@
   .card::-webkit-scrollbar{width:7px;}
   .card::-webkit-scrollbar-thumb{background:#c9b380; border-radius:99px;}
   .card::-webkit-scrollbar-track{background:transparent;}
-  .card::before{
-    content:""; position:absolute; inset:0; border-radius:20px; pointer-events:none;
-    background:linear-gradient(105deg, transparent 30%, rgba(255,255,255,.6) 46%, transparent 60%);
-    background-size:250% 100%;
-    opacity:0;
-    animation:sheen 1.1s ease .2s both;
-  }
-  @keyframes sheen{
-    0%{background-position:150% 0; opacity:1;}
-    80%{opacity:1;}
-    100%{background-position:-120% 0; opacity:0;}
-  }
   .card .eyebrow{color:var(--rust);}
   .card h3{font-size:26px; margin:4px 0 2px; color:var(--ink); font-weight:900; line-height:1.08;}
   .card .catalog{font-family:var(--mono); font-size:10.5px; letter-spacing:.12em; color:var(--ink-soft); text-transform:uppercase;}
@@ -445,14 +433,17 @@
   /* ---------- dive sites ---------- */
   .tile.dive{
     background:
-      radial-gradient(circle at 25% 30%, rgba(255,255,255,.14) 1.5px, transparent 3px),
-      radial-gradient(circle at 70% 60%, rgba(0,0,0,.14) 2px, transparent 4px),
-      linear-gradient(160deg, #7ec4c9, #4f9aa6);
+      radial-gradient(circle at 22% 28%, rgba(255,255,255,.28) 1.5px, transparent 3px),
+      radial-gradient(circle at 68% 62%, rgba(0,0,0,.12) 1.5px, transparent 3px),
+      radial-gradient(circle at 45% 82%, rgba(255,255,255,.14) 1px, transparent 2px),
+      linear-gradient(160deg, #9ce6ea, #5cc2c9);
+    box-shadow:inset 0 -4px 0 rgba(0,0,0,.24), inset 0 2px 0 rgba(255,255,255,.35), 0 2px 8px rgba(0,0,0,.32);
   }
   .tile.dive.depth1{
     background:
       radial-gradient(circle at 30% 30%, rgba(0,0,0,.2) 2px, transparent 4px),
-      linear-gradient(160deg, #3f8794, #2c6472);
+      radial-gradient(circle at 70% 65%, rgba(0,0,0,.22) 2.5px, transparent 5px),
+      linear-gradient(160deg, #4d9aa6, #367582);
     box-shadow:inset 0 3px 5px rgba(0,0,0,.4), inset 0 -2px 0 rgba(0,0,0,.25);
   }
   .tile.dive.cleared{
@@ -591,7 +582,7 @@
 <body>
 <div id="app"></div>
 <div id="fx"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v10</div>
+<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v11</div>
 
 <script>
 "use strict";
@@ -922,6 +913,33 @@ const SITES = [
           choices:["Ships vanish there every single day","It's guarded by sea monsters","Disappearances are no more common there than in other busy ocean areas"], answer:2 }
       }
     ]
+  },
+  {
+    id:"dinovalley",
+    name:"Dinosaur Valley",
+    where:"Texas, USA",
+    emoji:"🦕",
+    blurb:"A Texas riverbed where real dinosaurs left their footprints in stone.",
+    artifacts:[
+      {
+        id:"threetoe", emoji:"🦖", name:"Three-Toed Track", cat:"TX-001",
+        fact:"In the limestone bed of the Paluxy River at Dinosaur Valley State Park in Glen Rose, Texas, real dinosaur footprints are pressed into the stone from about 113 million years ago. The sharp, three-toed tracks were left by Acrocanthosaurus — a large meat-eating dinosaur that walked on two legs across what was then the muddy shore of a shallow sea.",
+        q:{ prompt:"What kind of dinosaur left the sharp, three-toed tracks?",
+          choices:["A meat-eating Acrocanthosaurus that walked on two legs","A tiny flying reptile","A giant swimming fish"], answer:0 }
+      },
+      {
+        id:"sauroprint", emoji:"🦕", name:"Saucer-Shaped Track", cat:"TX-002",
+        fact:"The park also preserves huge, saucer-shaped footprints from a sauropod — an enormous four-legged plant-eater with a very long neck and tail. Scientists link them to Sauroposeidon, the official state dinosaur of Texas. It stood about 13 feet tall at the hip and left hind footprints more than a yard across!",
+        q:{ prompt:"What was Sauroposeidon?",
+          choices:["A giant, long-necked, four-legged plant-eater","A tiny meat-eating hunter","A flying dinosaur"], answer:0 }
+      },
+      {
+        id:"birdtrackway", emoji:"👣", name:"The First Trackway", cat:"TX-003",
+        fact:"In 1938, fossil hunter Roland T. Bird identified the world's first known sauropod trackway right here in the Paluxy River. Some of those tracks were carefully lifted from the riverbed and are now on display far away at the American Museum of Natural History in New York — a real Texas treasure shared with the world.",
+        q:{ prompt:"Who identified the world's first known sauropod trackway here in 1938?",
+          choices:["Fossil hunter Roland T. Bird","Pharaoh Tutankhamun","A sailor named Bermuda"], answer:0 }
+      }
+    ]
   }
 ];
 
@@ -1227,6 +1245,46 @@ trianglecase: artWrap(`
   <path d="M52,56 l5,6 l9,-11" stroke="#3c8f4e" stroke-width="5" fill="none"/>`)
 });
 
+
+Object.assign(ART, {
+threetoe: artWrap(`
+  <rect x="16" y="18" width="88" height="84" rx="10" fill="#d9c28c"/>
+  <rect x="16" y="18" width="88" height="84" rx="10" fill="none" stroke="#b39a5f" stroke-width="2"/>
+  <g fill="#6b4a2a" stroke="#3d2a17" stroke-width="2.5" stroke-linejoin="round">
+    <path d="M60,84 Q52,66 50,54 Q49,46 55,46 Q60,46 60,56 Z"/>
+    <path d="M60,80 Q60,58 60,44 Q60,36 66,37 Q71,38 69,50 Q66,66 62,82 Z"/>
+    <path d="M60,84 Q70,68 76,58 Q80,50 74,48 Q69,47 66,58 Q62,72 60,84 Z"/>
+    <ellipse cx="60" cy="82" rx="11" ry="9"/>
+  </g>
+  <circle cx="34" cy="34" r="2" fill="#b39a5f" stroke="none"/>
+  <circle cx="88" cy="40" r="1.6" fill="#b39a5f" stroke="none"/>
+  <circle cx="82" cy="86" r="2" fill="#b39a5f" stroke="none"/>`),
+sauroprint: artWrap(`
+  <rect x="16" y="18" width="88" height="84" rx="10" fill="#d9c28c"/>
+  <rect x="16" y="18" width="88" height="84" rx="10" fill="none" stroke="#b39a5f" stroke-width="2"/>
+  <ellipse cx="60" cy="64" rx="30" ry="27" fill="#6b4a2a" stroke="#3d2a17" stroke-width="3"/>
+  <ellipse cx="60" cy="64" rx="20" ry="17" fill="#5a3d22" stroke="none"/>
+  <g fill="#3d2a17" stroke="none">
+    <path d="M44,42 q-4,-6 2,-8 q5,-1 4,6 Z"/>
+    <path d="M60,36 q0,-7 6,-6 q4,1 1,8 Z"/>
+    <path d="M76,42 q5,-5 8,0 q2,4 -4,7 Z"/>
+  </g>
+  <circle cx="30" cy="40" r="2" fill="#b39a5f" stroke="none"/>
+  <circle cx="92" cy="88" r="2" fill="#b39a5f" stroke="none"/>`),
+birdtrackway: artWrap(`
+  <rect x="14" y="16" width="92" height="88" rx="10" fill="#d9c28c"/>
+  <rect x="14" y="16" width="92" height="88" rx="10" fill="none" stroke="#b39a5f" stroke-width="2"/>
+  <g fill="#6b4a2a" stroke="#3d2a17" stroke-width="2" stroke-linejoin="round">
+    <ellipse cx="38" cy="40" rx="9" ry="11"/>
+    <ellipse cx="60" cy="58" rx="9" ry="11"/>
+    <ellipse cx="44" cy="76" rx="9" ry="11"/>
+    <ellipse cx="80" cy="70" rx="8" ry="10"/>
+  </g>
+  <path d="M38,40 Q52,50 60,58 Q54,68 44,76" fill="none" stroke="#b39a5f" stroke-width="2" stroke-dasharray="3 4"/>
+  <circle cx="90" cy="30" r="2" fill="#b39a5f" stroke="none"/>
+  <circle cx="24" cy="92" r="2" fill="#b39a5f" stroke="none"/>`)
+});
+
 /* ---------------- companions ---------------- */
 function diveGear(cx, cy, w){
   // goggles + snorkel positioned over a face centered at (cx,cy), w = mask width
@@ -1459,6 +1517,24 @@ const EXTRA_QS = {
       choices:["Double the normal price","A treasure chest of gold","Nothing extra at all"], answer:2 },
     { prompt:"What wins when we check spooky stories carefully?",
       choices:["Evidence — real investigation beats rumors","Aliens","Sea monsters"], answer:0 }
+  ],
+  threetoe:[
+    { prompt:"How long ago were the Paluxy River footprints made?",
+      choices:["About 113 million years ago","About 100 years ago","Last summer"], answer:0 },
+    { prompt:"What was this place like when the tracks were made?",
+      choices:["The muddy shore of a shallow sea","A frozen glacier","A dry, sandy desert"], answer:0 }
+  ],
+  sauroprint:[
+    { prompt:"What special title does Sauroposeidon hold in Texas?",
+      choices:["The official state dinosaur of Texas","The state bird","The state flower"], answer:0 },
+    { prompt:"How big were the sauropod's hind footprints?",
+      choices:["More than a yard across","The size of a coin","Too small to see"], answer:0 }
+  ],
+  birdtrackway:[
+    { prompt:"Where can you now see some of the tracks lifted from the Paluxy River?",
+      choices:["The American Museum of Natural History in New York","On the Moon","Nowhere — they were lost"], answer:0 },
+    { prompt:"Which river holds these famous Texas dinosaur tracks?",
+      choices:["The Paluxy River","The Nile River","The Amazon River"], answer:0 }
   ]
 };
 function allQs(art){ return [art.q].concat(EXTRA_QS[art.id]||[]); }
@@ -1841,7 +1917,8 @@ const SITE_LINKS = {
   antikythera: { url:"https://kids.britannica.com/kids/article/Antikythera-mechanism/471420", label:"Britannica Kids — the Antikythera mechanism" },
   titanic:     { url:"https://oceantoday.noaa.gov/titanicwrecksite/", label:"NOAA Ocean Today — the Titanic wrecksite" },
   portroyal:   { url:"https://www.britannica.com/place/Port-Royal-Jamaica", label:"Britannica — Port Royal, Jamaica" },
-  bermuda:     { url:"https://oceanservice.noaa.gov/facts/bermudatri.html", label:"NOAA — What is the Bermuda Triangle?" }
+  bermuda:     { url:"https://oceanservice.noaa.gov/facts/bermudatri.html", label:"NOAA — What is the Bermuda Triangle?" },
+  dinovalley:  { url:"https://tpwd.texas.gov/state-parks/dinosaur-valley", label:"Texas Parks & Wildlife — Dinosaur Valley State Park" }
 };
 function learnBlock(siteId){
   const L = SITE_LINKS[siteId];
@@ -1862,7 +1939,8 @@ const SITE_GEO = {
   tikal:       { lat:17.2,  lon:-89.6 },
   titanic:     { lat:41.73, lon:-49.95 },
   portroyal:   { lat:17.94, lon:-76.84 },
-  bermuda:     { lat:32.31, lon:-64.75 }
+  bermuda:     { lat:32.31, lon:-64.75 },
+  dinovalley:  { lat:32.25, lon:-97.82 }
 };
 const HQ_POS = { x:500, y:107 };
 function sitePos(id){
@@ -1871,7 +1949,8 @@ function sitePos(id){
 }
 const PIN_LABEL_OFF = {
   tikal:[0,-16], pompeii:[-20,-8], antikythera:[16,16], egypt:[20,4], xian:[0,-16],
-  titanic:[0,-16], portroyal:[20,14], bermuda:[18,-12]
+  titanic:[0,-16], portroyal:[20,14], bermuda:[18,-12],
+  dinovalley:[-18,-10]
 };
 
 let traveling = false;
