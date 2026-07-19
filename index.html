@@ -362,6 +362,7 @@
   }
   .speak-btn:hover{ border-color:var(--rust); }
   .speak-btn:active{ transform:translateY(2px); box-shadow:none; }
+  .speak-wrap{ margin-top:2px; }
   .speak-btn.speaking{ background:#ffe6a8; border-color:var(--rust); }
   .rd-w{ border-radius:5px; padding:0 1px; transition:background .1s ease; }
   .rd-w.reading{ background:#ffd23f; color:#2b1a08; box-shadow:0 0 0 3px #ffd23f; }
@@ -601,7 +602,7 @@
 <body>
 <div id="app"></div>
 <div id="fx"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v13</div>
+<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v14</div>
 
 <script>
 "use strict";
@@ -2212,6 +2213,7 @@ function openDiscovery(art){
 }
 function closeModal(){
   stopSpeaking();
+  _lastAutoReadText = null;
   modal = null;
   if(discoveryQueue.length){ openDiscovery(discoveryQueue.shift()); return; }
   if(questQueue.length){ modal = { quest: questQueue.shift() }; SFX.quest(); render(); return; }
@@ -2288,18 +2290,41 @@ function readableParts(text){
 }
 function readable(text){ const r = readableParts(text); return `<span class="rd" id="${r.id}">${r.html}</span>`; }
 function speakBtn(planIds, label){
+  if(!state.readAloud) return "";
   const plan = Array.isArray(planIds) ? planIds.join(",") : planIds;
-  return `<button class="speak-btn" type="button" data-plan="${plan}" aria-label="Read aloud">🔊 <span>${esc(label || "Read to me")}</span></button>`;
+  return `<div class="speak-wrap"><button class="speak-btn" type="button" data-plan="${plan}" aria-label="Read aloud">🔊 <span>${esc(label || "Read to me")}</span></button></div>`;
 }
 function ttsSupported(){ return typeof window !== "undefined" && "speechSynthesis" in window; }
+let _rdVoice = null, _rdVoicePicked = false;
+function scoreVoice(v){
+  let s = 0;
+  const n = v.name || "";
+  if(/en[-_]US/i.test(v.lang)) s += 40; else if(/^en/i.test(v.lang)) s += 20;
+  if(/natural|neural/i.test(n)) s += 60;          // Windows/Edge natural voices — best
+  if(/enhanced|premium/i.test(n)) s += 55;         // Apple enhanced voices
+  if(/google/i.test(n)) s += 45;                   // Chrome Google voices — very good
+  if(/(Samantha|Ava|Allison|Aria|Jenny|Karen|Moira|Serena|Zoe|Sonia)/i.test(n)) s += 25; // pleasant named voices
+  if(/(Zira|David|Mark|Microsoft)/i.test(n) && !/natural|neural/i.test(n)) s -= 10;       // old robotic MS voices
+  if(v.localService === false) s += 5;             // cloud voices often nicer
+  return s;
+}
 function pickVoice(){
   if(!ttsSupported()) return null;
   const vs = window.speechSynthesis.getVoices() || [];
-  if(!vs.length) return null;
-  return vs.find(v=>/en[-_]US/i.test(v.lang) && /(Samantha|Google US English|Jenny|Aria|Zira|Female|Karen|Moira)/i.test(v.name))
-      || vs.find(v=>/en[-_]US/i.test(v.lang))
-      || vs.find(v=>/^en/i.test(v.lang))
-      || vs[0];
+  if(!vs.length){ _rdVoicePicked = false; return null; }
+  if(_rdVoicePicked && _rdVoice) return _rdVoice;
+  let best = null, bestScore = -1e9;
+  for(const v of vs){ const sc = scoreVoice(v); if(sc > bestScore){ bestScore = sc; best = v; } }
+  _rdVoice = best; _rdVoicePicked = true;
+  return best;
+}
+/* each companion gets its own cartoon-ish voice character */
+function compVoiceTune(){
+  const sp = (typeof activeComp === "function") ? activeComp().species : "dog";
+  if(sp === "parrot") return { pitch: 1.45, rate: 0.95 };  // bright, squawky lookout
+  if(sp === "cat")    return { pitch: 1.28, rate: 0.9 };   // light, quick
+  if(sp === "turtle") return { pitch: 0.9,  rate: 0.84 };  // slow, chill dude
+  return { pitch: 1.18, rate: 0.9 };                       // dog — warm & friendly
 }
 function stopSpeaking(){
   RD_ACTIVE = false;
@@ -2322,7 +2347,8 @@ function speakParts(parts, sourceBtn){
     }
     const part = parts[i++];
     const u = new SpeechSynthesisUtterance(part.text);
-    u.rate = 0.86; u.pitch = 1.06; u.lang = "en-US";
+    const tune = compVoiceTune();
+    u.rate = tune.rate; u.pitch = tune.pitch; u.lang = "en-US";
     const v = pickVoice(); if(v) u.voice = v;
     const words = part.wordsEl ? [...part.wordsEl.querySelectorAll(".rd-w")] : [];
     if(part.highlightEl) part.highlightEl.classList.add("reading");
@@ -2359,12 +2385,17 @@ function wireSpeak(frag){
     });
   });
 }
+let _suppressAutoReadOnce = false;
+let _lastAutoReadText = null;
 function maybeAutoRead(){
-  if(_autoReadPlan && state.readAloud){
-    const plan = _autoReadPlan;
-    setTimeout(()=>{ if(document.getElementById(plan[0])) readPlan(plan); }, 420);
-  }
+  const plan = _autoReadPlan;
   _autoReadPlan = null;
+  if(_suppressAutoReadOnce){ _suppressAutoReadOnce = false; return; }   // don't re-read when just toggling
+  if(!plan || !state.readAloud) return;
+  const key = RD_TEXTS[plan[0]] || "";
+  if(key && key === _lastAutoReadText) return;                          // same card re-rendered — don't repeat
+  _lastAutoReadText = key;
+  setTimeout(()=>{ if(document.getElementById(plan[0])) readPlan(plan); }, 420);
 }
 if(typeof window !== "undefined" && "speechSynthesis" in window){
   try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = ()=>{ window.speechSynthesis.getVoices(); }; }catch(e){}
@@ -2564,7 +2595,7 @@ function renderMap(){
   frag.getElementById("museum").onclick = ()=>{ state.museumBack="map"; state.screen="museum"; render(); };
   frag.getElementById("quests").onclick = ()=>{ state.screen="quests"; render(); };
   frag.getElementById("mute").onclick = ()=>{ state.muted=!state.muted; saveProgress(); render(); };
-  { const rt = frag.getElementById("readtoggle"); if(rt) rt.onclick = ()=>{ state.readAloud=!state.readAloud; if(!state.readAloud) stopSpeaking(); saveProgress(); render(); }; }
+  { const rt = frag.getElementById("readtoggle"); if(rt) rt.onclick = ()=>{ state.readAloud=!state.readAloud; stopSpeaking(); _suppressAutoReadOnce = true; saveProgress(); render(); }; }
   const tr = frag.getElementById("teamrow");
   if(tr){
     tr.querySelectorAll(".team-chip").forEach(chip=>{
@@ -2683,7 +2714,7 @@ function renderDig(){
   frag.getElementById("back").onclick = ()=>{ state.tip=null; state.screen="map"; render(); };
   frag.getElementById("museum").onclick = ()=>{ state.museumBack="dig"; state.screen="museum"; render(); };
   frag.getElementById("mute").onclick = ()=>{ state.muted=!state.muted; saveProgress(); render(); };
-  { const rt = frag.getElementById("readtoggle"); if(rt) rt.onclick = ()=>{ state.readAloud=!state.readAloud; if(!state.readAloud) stopSpeaking(); saveProgress(); render(); }; }
+  { const rt = frag.getElementById("readtoggle"); if(rt) rt.onclick = ()=>{ state.readAloud=!state.readAloud; stopSpeaking(); _suppressAutoReadOnce = true; saveProgress(); render(); }; }
   frag.getElementById("toolBrush").onclick = ()=>{ ac(); SFX.clink(); state.tool="brush"; dogSay("idle", line("brushPick")); render(); };
   frag.getElementById("toolShovel").onclick = ()=>{ ac(); SFX.clink(); state.tool="shovel"; dogSay("idle", line("shovelPick")); render(); };
   frag.getElementById("toolSniff").onclick = ()=>{ ac(); sniff(); };
@@ -2701,7 +2732,7 @@ function renderModal(){
       <h3>${esc(art.name)}</h3>
       <div class="catalog">Catalog № ${art.cat}</div>
       <div class="art-svg">${artOf(art.id)}</div>
-      <div class="fact"><span class="fact-label">Field Fact — verified</span><span class="rd" id="${rf.id}">${rf.html}</span><br>${speakBtn(rf.id)}</div>
+      <div class="fact"><span class="fact-label">Field Fact — verified</span><span class="rd" id="${rf.id}">${rf.html}</span>${speakBtn(rf.id)}</div>
       <div class="actions"><button class="btn-main" id="next">I read it — quiz me!</button></div>
     `;
     _autoReadPlan = [rf.id];
@@ -2726,7 +2757,7 @@ function renderModal(){
         <div class="art-svg">${artOf(art.id)}</div>
         <span class="stamp slam">Certified Find</span>
       </div>
-      <div class="fact"><span class="fact-label">You learned a true thing</span>${(()=>{const r=readableParts(art.fact); _certRid=r.id; return `<span class="rd" id="${r.id}">${r.html}</span>`;})()}<br>${speakBtn(_certRid)}</div>
+      <div class="fact"><span class="fact-label">You learned a true thing</span>${(()=>{const r=readableParts(art.fact); _certRid=r.id; return `<span class="rd" id="${r.id}">${r.html}</span>`;})()}${speakBtn(_certRid)}</div>
       ${learnBlock(siteOfArtifact(art.id).id)}
       <div class="actions"><button class="btn-main" id="close">Keep digging</button></div>
     `;
@@ -2801,12 +2832,12 @@ function renderExhibitModal(){
       <h3>${esc(a.name)}</h3>
       <div class="catalog">Catalog № ${a.cat}</div>
       <div class="art-svg">${artOf(a.id)}</div>
-      <div class="fact"><span class="fact-label">The true story</span>${(()=>{const r=readableParts(a.fact); _exhRid=r.id; return `<span class="rd" id="${r.id}">${r.html}</span>`;})()}<br>${speakBtn(_exhRid)}</div>
+      <div class="fact"><span class="fact-label">The true story</span>${(()=>{const r=readableParts(a.fact); _exhRid=r.id; return `<span class="rd" id="${r.id}">${r.html}</span>`;})()}${speakBtn(_exhRid)}</div>
       ${learnBlock(siteOfArtifact(a.id).id)}
       <div class="actions"><button class="btn-main" id="close">Back to the hall</button></div>
     </div></div>
   `);
-  frag.getElementById("close").onclick = ()=>{ modal=null; render(); };
+  frag.getElementById("close").onclick = ()=>{ stopSpeaking(); _lastAutoReadText=null; modal=null; render(); };
   _autoReadPlan = [_exhRid];
   wireSpeak(frag);
   return frag;
@@ -2957,7 +2988,7 @@ function renderPopQuizModal(){
     };
     wrap.append(b);
   });
-  frag.getElementById("quit").onclick = ()=>{ stopSpeaking(); state.quiz=null; modal=null; render(); };
+  frag.getElementById("quit").onclick = ()=>{ stopSpeaking(); _lastAutoReadText=null; state.quiz=null; modal=null; render(); };
   const _pqplan = [_pqQid, ..._pqChoiceIds];
   const _slot = frag.getElementById("pqreadslot");
   if(_slot) _slot.innerHTML = speakBtn(_pqplan, "Read question & choices");
