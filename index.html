@@ -602,7 +602,7 @@
 <body>
 <div id="app"></div>
 <div id="fx"></div>
-<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v14</div>
+<div style="position:fixed;bottom:4px;right:8px;font-family:monospace;font-size:10px;color:#5a4a6a;pointer-events:none;z-index:5">v15</div>
 
 <script>
 "use strict";
@@ -2160,6 +2160,7 @@ function digTile(idx, el){
     t.depth--;
     if(t.depth===0){
       t.revealed = true;
+      d.sniffUsed = false;   // buddy can sniff again after each find — never leave a kid stuck
       d.revealed[t.artifact]++;
       const art = site.artifacts.find(a=>a.id===t.artifact);
       const got = d.revealed[t.artifact];
@@ -2296,25 +2297,32 @@ function speakBtn(planIds, label){
 }
 function ttsSupported(){ return typeof window !== "undefined" && "speechSynthesis" in window; }
 let _rdVoice = null, _rdVoicePicked = false;
-function scoreVoice(v){
-  let s = 0;
-  const n = v.name || "";
-  if(/en[-_]US/i.test(v.lang)) s += 40; else if(/^en/i.test(v.lang)) s += 20;
-  if(/natural|neural/i.test(n)) s += 60;          // Windows/Edge natural voices — best
-  if(/enhanced|premium/i.test(n)) s += 55;         // Apple enhanced voices
-  if(/google/i.test(n)) s += 45;                   // Chrome Google voices — very good
-  if(/(Samantha|Ava|Allison|Aria|Jenny|Karen|Moira|Serena|Zoe|Sonia)/i.test(n)) s += 25; // pleasant named voices
-  if(/(Zira|David|Mark|Microsoft)/i.test(n) && !/natural|neural/i.test(n)) s -= 10;       // old robotic MS voices
-  if(v.localService === false) s += 5;             // cloud voices often nicer
-  return s;
-}
 function pickVoice(){
   if(!ttsSupported()) return null;
   const vs = window.speechSynthesis.getVoices() || [];
-  if(!vs.length){ _rdVoicePicked = false; return null; }
-  if(_rdVoicePicked && _rdVoice) return _rdVoice;
-  let best = null, bestScore = -1e9;
-  for(const v of vs){ const sc = scoreVoice(v); if(sc > bestScore){ bestScore = sc; best = v; } }
+  if(!vs.length){ _rdVoicePicked = false; return null; }   // voices not loaded yet — use default this time
+  if(_rdVoicePicked) return _rdVoice;
+  const en = vs.filter(v=>/^en/i.test(v.lang));
+  const pool = en.length ? en : vs;
+  // Only trust voices that reliably produce AUDIO in this browser:
+  //   • Google voices (Chrome) — good quality and always play
+  //   • any localService voice — installed on the device, always plays
+  // Exclude Microsoft "Online"/remote "Natural" voices: Chrome/Brave list them but
+  // frequently can't actually play them, which produces silence with no error.
+  const playable = pool.filter(v=>/google/i.test(v.name) || v.localService === true);
+  if(!playable.length){ _rdVoice = null; _rdVoicePicked = true; return null; } // fall back to browser default (guaranteed audible)
+  const score = v=>{
+    let s = 0; const n = v.name || "";
+    if(/en[-_]US/i.test(v.lang)) s += 15;
+    if(/google/i.test(n)) s += 40;
+    if(/enhanced|premium|natural|neural/i.test(n)) s += 25;
+    if(/(Samantha|Ava|Allison|Karen|Moira|Serena|Zoe|Sonia|Tessa|Fiona|Jenny|Aria)/i.test(n)) s += 20;
+    if(/(Zira|David|Mark)/i.test(n)) s -= 5;
+    if(v.default) s += 8;
+    return s;
+  };
+  let best = null, bs = -1e9;
+  for(const v of playable){ const sc = score(v); if(sc > bs){ bs = sc; best = v; } }
   _rdVoice = best; _rdVoicePicked = true;
   return best;
 }
@@ -2398,7 +2406,7 @@ function maybeAutoRead(){
   setTimeout(()=>{ if(document.getElementById(plan[0])) readPlan(plan); }, 420);
 }
 if(typeof window !== "undefined" && "speechSynthesis" in window){
-  try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = ()=>{ window.speechSynthesis.getVoices(); }; }catch(e){}
+  try{ window.speechSynthesis.getVoices(); window.speechSynthesis.onvoiceschanged = ()=>{ _rdVoicePicked = false; window.speechSynthesis.getVoices(); }; }catch(e){}
 }
 function artOf(id){ return ART[id] || ""; }
 
